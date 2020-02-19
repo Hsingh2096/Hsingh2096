@@ -1,0 +1,10 @@
+{
+    "connection_string": "sqlite:///:memory:",
+    "database": "augur_pivotal",
+    "host": "nekocase.augurlabs.io",
+    "password": "UKPivotal",
+    "port": 5433,
+    "schema": "augur_data",
+    "user": "dawn",
+    "user_type": "read_only"
+}
