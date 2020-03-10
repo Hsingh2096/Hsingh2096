@@ -1,0 +1,10 @@
+{
+    "connection_string": "sqlite:///:memory:",
+    "database": "database",
+    "host": "themoon.io",
+    "key": "key_to_the_city",
+    "password": "shave_and_a_haircut",
+    "port": 5433,
+    "schema": "augur_data",
+    "user": "augur"
+}
