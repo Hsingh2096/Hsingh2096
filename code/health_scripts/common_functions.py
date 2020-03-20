@@ -213,6 +213,155 @@ def monthly_prs_all(repo_id, repo_name, start_date, end_date, engine):
 
     return pr_monthDF
 
+def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
+
+    import pandas as pd
+
+    #Commit data - from humans excluding known bots
+    commitsDF = pd.DataFrame()
+    commitsquery = f"""
+                    SELECT
+                        CASE WHEN contributors.cntrb_canonical IS NOT NULL THEN contributors.cntrb_canonical ELSE cmt_author_email END AS cntrb_canonical,
+                        CASE WHEN canonical_full_names.cntrb_full_name IS NOT NULL THEN canonical_full_names.cntrb_full_name ELSE cmt_author_name END AS canonical_full_name,
+                        cmt_author_name, cmt_author_email, repo_id, cmt_id, cmt_author_timestamp 
+                    FROM commits 
+                        LEFT OUTER JOIN contributors ON cntrb_email = cmt_author_email
+                        LEFT OUTER JOIN (
+                            SELECT cntrb_canonical, cntrb_full_name 
+                            FROM contributors
+                            WHERE cntrb_canonical = cntrb_email
+                        ) canonical_full_names
+                        ON canonical_full_names.cntrb_canonical = contributors.cntrb_canonical
+                    WHERE
+                        repo_id = {repo_id}
+                        AND cmt_author_name NOT LIKE 'snyk%%'
+                        AND cmt_author_name NOT LIKE '%%bot'
+                        AND cmt_author_name != 'Spring Operator'
+                        AND cmt_author_name != 'Spring Buildmaster'
+                         AND cmt_author_timestamp >= {start_date}
+                         AND cmt_author_timestamp <= {end_date}
+                    ORDER BY
+                        cntrb_canonical;
+                    """
+    
+    commitsDF = pd.read_sql_query(commitsquery, con=engine)
+    total_commits = commitsDF.cmt_id.nunique()    
+
+    authorDF = pd.DataFrame()
+    authorDF = commitsDF.canonical_full_name.value_counts()
+    authorDF = authorDF.reset_index()
+    authorDF.columns = ['name', 'commits']
+    authorDF['percent'] = authorDF['commits'] / total_commits
+    print(authorDF.head(10))
+
+    return authorDF
+
+def output_filename(repo_name, metric_string): 
+
+    import datetime
+
+    today = datetime.date.today()
+    current_year_month = str(today.year) + '-' + '{:02d}'.format(today.month)
+
+    filename = 'output/' +  metric_string + '_' + repo_name + "_" + current_year_month + '.png'
+
+    return filename
+
+def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
+
+    import pandas as pd
+    import seaborn as sns
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import textwrap
+
+    authorDF = commit_author_data(repo_id, repo_name, start_date, end_date, engine)
+
+    cum_percent = 0
+    people_list = []
+
+    i = 1
+    num_people = 0
+
+    for item in authorDF.iterrows():
+        name = item[1]['name']
+        percent = item[1]['percent']
+        commits = item[1]['commits']
+    
+        cum_percent += percent
+    
+        people_list.append([name, percent, commits])
+    
+        if (cum_percent > .50 and num_people == 0):
+            num_people = i
+            risk_percent = cum_percent
+        
+        if i == 8:
+            break
+        i+=1
+    
+    risk_list = []
+    bar_colors = []
+
+    j = 1
+    for person in people_list:
+        name = person[0]
+        if len(name) > 15:
+            new_name = textwrap.wrap(name, 15)
+            name = '\n'.join(new_name)
+        percent = person[1]
+        commits = person[2]
+        risk_list.append([name, percent, commits])
+    
+        if (num_people < 3 and j <= num_people):
+            bar_colors.append('red')
+        else:
+            bar_colors.append('blue')
+    
+        j+=1
+    
+    names = [item[0] for item in risk_list]
+    percents = [item[1] for item in risk_list]
+    commits = [item[2] for item in risk_list]
+
+    matplotlib.use('Agg') #prevents from tying to send plot to screen
+    sns.set_style('ticks')
+    sns.set(style="whitegrid", font_scale=2)
+
+    fig, ax = plt.subplots()
+
+    # the size of A4 paper
+    fig.set_size_inches(24, 8)
+
+    title = repo_name + "\nContributor Risk Metric Assessment: "
+
+    if num_people < 3:
+        title += "AT RISK"
+        title_color = 'firebrick'
+    else:
+        title += "Healthy"
+        title_color = 'forestgreen'
+    title += "\n" + str(num_people) + " people made up " + "{:.0%}".format(risk_percent) + " of the commits in the past year.\n"
+
+    risk_bar = sns.barplot(x=names, y=commits, palette=bar_colors).set_title(title, fontsize=30, color=title_color)
+
+    risk_bar_labels = ax.set_xticklabels(names, wrap=True)
+    risk_bar_labels = ax.set_ylabel('Commits')
+    risk_bar_labels = ax.set_xlabel('\nKey Contributors\n\nA healthy project should have at a minimum 3 people who combined account for the majority (>50%) of the commits.\nThe higher this number is, the more likely your project would succeed if a leading contributor suddenly left the project.')
+
+    i = 0
+    for p in ax.patches:
+        ax.annotate("{:.0%}".format(percents[i]), (p.get_x() + p.get_width() / 2., p.get_height()),
+            ha='center', va='center', color='gray', xytext=(0, 20),
+            textcoords='offset points')
+        i+=1
+
+    filename = output_filename(repo_name, 'contrib_risk_commits')
+
+    fig.savefig(filename, bbox_inches='tight')
+
+    print('\nContributor Risk for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename, '\n')
+
 def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
 
     import pandas as pd
@@ -256,10 +405,7 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
     plottermonthlabels = ax.set_ylabel('Number of PRs')
     plottermonthlabels = ax.set_xlabel('Year Month\n\nInterpretation: Healthy projects will have little or no gap. A large or increasing gap requires attention.')
 
-    today = datetime.date.today()
-    current_year_month = str(today.year) + '-' + '{:02d}'.format(today.month)
-
-    filename = 'output/sustains_pr_' + repo_name + "_" + current_year_month + '.png'
+    filename = output_filename(repo_name, 'sustains_pr')
 
     fig.savefig(filename, bbox_inches='tight')
 
