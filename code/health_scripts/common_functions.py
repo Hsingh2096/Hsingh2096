@@ -252,7 +252,6 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
     authorDF = authorDF.reset_index()
     authorDF.columns = ['name', 'commits']
     authorDF['percent'] = authorDF['commits'] / total_commits
-    print(authorDF.head(10))
 
     return authorDF
 
@@ -361,6 +360,168 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
     fig.savefig(filename, bbox_inches='tight')
 
     print('\nContributor Risk for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename, '\n')
+
+def response_time_data(repo_id, repo_name, start_date, end_date, engine):
+
+    import pandas as pd
+    import sqlalchemy as s
+
+    pr_all = pd.DataFrame()
+
+    pr_query = s.sql.text(f"""
+                     SELECT
+                        repo.repo_id AS repo_id,
+                        pull_requests.pr_src_id AS pr_src_id,
+                        repo.repo_name AS repo_name,
+                        pr_src_author_association,
+                        repo_groups.rg_name AS repo_group,
+                        pull_requests.pr_src_state,
+                        pull_requests.pr_merged_at,
+                        pull_requests.pr_created_at AS pr_created_at,
+                        pull_requests.pr_closed_at AS pr_closed_at,
+                        date_part( 'year', pr_created_at :: DATE ) AS CREATED_YEAR,
+                        date_part( 'month', pr_created_at :: DATE ) AS CREATED_MONTH,
+                        date_part( 'year', pr_closed_at :: DATE ) AS CLOSED_YEAR,
+                        date_part( 'month', pr_closed_at :: DATE ) AS CLOSED_MONTH,
+                        pr_src_meta_label,
+                        pr_head_or_base,
+                        ( EXTRACT ( EPOCH FROM pull_requests.pr_closed_at ) - EXTRACT ( EPOCH FROM pull_requests.pr_created_at ) ) / 3600 AS hours_to_close,
+                        ( EXTRACT ( EPOCH FROM pull_requests.pr_closed_at ) - EXTRACT ( EPOCH FROM pull_requests.pr_created_at ) ) / 86400 AS days_to_close, 
+                        ( EXTRACT ( EPOCH FROM first_response_time ) - EXTRACT ( EPOCH FROM pull_requests.pr_created_at ) ) / 3600 AS hours_to_first_response,
+                        ( EXTRACT ( EPOCH FROM first_response_time ) - EXTRACT ( EPOCH FROM pull_requests.pr_created_at ) ) / 86400 AS days_to_first_response, 
+                        ( EXTRACT ( EPOCH FROM last_response_time ) - EXTRACT ( EPOCH FROM pull_requests.pr_created_at ) ) / 3600 AS hours_to_last_response,
+                        ( EXTRACT ( EPOCH FROM last_response_time ) - EXTRACT ( EPOCH FROM pull_requests.pr_created_at ) ) / 86400 AS days_to_last_response, 
+                        first_response_time,
+                        last_response_time,
+                        average_time_between_responses,
+                        assigned_count,
+                        review_requested_count,
+                        labeled_count,
+                        subscribed_count,
+                        mentioned_count,
+                        referenced_count,
+                        closed_count,
+                        head_ref_force_pushed_count,
+                        merged_count,
+                        milestoned_count,
+                        unlabeled_count,
+                        head_ref_deleted_count,
+                        comment_count,
+                        lines_added, 
+                        lines_removed,
+                        commit_count, 
+                        file_count
+                    FROM
+                        repo,
+                        repo_groups,
+                        pull_requests LEFT OUTER JOIN ( 
+                            SELECT pull_requests.pull_request_id,
+                            count(*) FILTER (WHERE action = 'assigned') AS assigned_count,
+                            count(*) FILTER (WHERE action = 'review_requested') AS review_requested_count,
+                            count(*) FILTER (WHERE action = 'labeled') AS labeled_count,
+                            count(*) FILTER (WHERE action = 'unlabeled') AS unlabeled_count,
+                            count(*) FILTER (WHERE action = 'subscribed') AS subscribed_count,
+                            count(*) FILTER (WHERE action = 'mentioned') AS mentioned_count,
+                            count(*) FILTER (WHERE action = 'referenced') AS referenced_count,
+                            count(*) FILTER (WHERE action = 'closed') AS closed_count,
+                            count(*) FILTER (WHERE action = 'head_ref_force_pushed') AS head_ref_force_pushed_count,
+                            count(*) FILTER (WHERE action = 'head_ref_deleted') AS head_ref_deleted_count,
+                            count(*) FILTER (WHERE action = 'milestoned') AS milestoned_count,
+                            count(*) FILTER (WHERE action = 'merged') AS merged_count,
+                            MIN(message.msg_timestamp) AS first_response_time,
+                            COUNT(DISTINCT message.msg_timestamp) AS comment_count,
+                            MAX(message.msg_timestamp) AS last_response_time,
+                            (MAX(message.msg_timestamp) - MIN(message.msg_timestamp)) / COUNT(DISTINCT message.msg_timestamp) AS average_time_between_responses
+                            FROM pull_request_events, pull_requests, repo, pull_request_message_ref, message
+                            WHERE repo.repo_id = {repo_id}
+                            AND repo.repo_id = pull_requests.repo_id
+                            AND pull_requests.pull_request_id = pull_request_events.pull_request_id
+                            AND pull_requests.pull_request_id = pull_request_message_ref.pull_request_id
+                            AND pull_request_message_ref.msg_id = message.msg_id
+                            GROUP BY pull_requests.pull_request_id
+                        ) response_times
+                        ON pull_requests.pull_request_id = response_times.pull_request_id
+                        LEFT OUTER JOIN (
+                            SELECT pull_request_commits.pull_request_id, count(DISTINCT pr_cmt_sha) AS commit_count                                FROM pull_request_commits, pull_requests, pull_request_meta
+                            WHERE pull_requests.pull_request_id = pull_request_commits.pull_request_id
+                            AND pull_requests.pull_request_id = pull_request_meta.pull_request_id
+                            AND pull_requests.repo_id = {repo_id}
+                            AND pr_cmt_sha <> pull_requests.pr_merge_commit_sha
+                            AND pr_cmt_sha <> pull_request_meta.pr_sha
+                            GROUP BY pull_request_commits.pull_request_id
+                        ) all_commit_counts
+                        ON pull_requests.pull_request_id = all_commit_counts.pull_request_id
+                        LEFT OUTER JOIN (
+                            SELECT MAX(pr_repo_meta_id), pull_request_meta.pull_request_id, pr_head_or_base, pr_src_meta_label
+                            FROM pull_requests, pull_request_meta
+                            WHERE pull_requests.pull_request_id = pull_request_meta.pull_request_id
+                            AND pull_requests.repo_id = {repo_id}
+                            AND pr_head_or_base = 'base'
+                            GROUP BY pull_request_meta.pull_request_id, pr_head_or_base, pr_src_meta_label
+                        ) base_labels
+                        ON base_labels.pull_request_id = all_commit_counts.pull_request_id
+                        LEFT OUTER JOIN (
+                            SELECT sum(cmt_added) AS lines_added, sum(cmt_removed) AS lines_removed, pull_request_commits.pull_request_id, count(DISTINCT cmt_filename) AS file_count
+                            FROM pull_request_commits, commits, pull_requests, pull_request_meta
+                            WHERE cmt_commit_hash = pr_cmt_sha
+                            AND pull_requests.pull_request_id = pull_request_commits.pull_request_id
+                            AND pull_requests.pull_request_id = pull_request_meta.pull_request_id
+                            AND pull_requests.repo_id = {repo_id}
+                            AND commits.repo_id = pull_requests.repo_id
+                            AND commits.cmt_commit_hash <> pull_requests.pr_merge_commit_sha
+                            AND commits.cmt_commit_hash <> pull_request_meta.pr_sha
+                            GROUP BY pull_request_commits.pull_request_id
+                        ) master_merged_counts 
+                        ON base_labels.pull_request_id = master_merged_counts.pull_request_id                    
+                    WHERE 
+                        repo.repo_group_id = repo_groups.repo_group_id 
+                        AND repo.repo_id = pull_requests.repo_id 
+                        AND repo.repo_id = {repo_id}
+                        AND pr_created_at >= {start_date}
+                        AND pr_created_at <= {end_date}
+                    ORDER BY
+                       merged_count DESC
+                    """)
+    pr_a = pd.read_sql(pr_query, con=engine)
+    pr_all = pr_a
+
+    return pr_all
+
+def response_time(repo_id, repo_name, start_date, end_date, engine):
+
+    import pandas as pd
+    import seaborn as sns
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import datetime
+
+    pr_all = response_time_data(repo_id, repo_name, start_date, end_date, engine)
+
+    pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
+    pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
+    pr_all['diff_days'] = pr_all['diff'] / datetime.timedelta(days=1)
+    year_month_list = pr_all.yearmonth.unique()
+    year_month_list.sort()
+
+    matplotlib.use('Agg') #prevents from tying to send plot to screen
+    sns.set_style('ticks')
+    sns.set(style="whitegrid", font_scale=2)
+
+    fig, ax = plt.subplots()
+    fig.set_size_inches(24, 8)
+
+    title = repo_name + "\nTimely Responses:\nFirst response time (in days) for PRs"
+
+    my_plot = sns.boxplot(x='yearmonth', y='diff_days', data=pr_all, ax=ax, order=year_month_list, showfliers = False, whis=3).set_title(title, fontsize=30)
+
+    risk_bar_labels = ax.set_ylabel('First Response in Days')
+    risk_bar_labels = ax.set_xlabel('Year-Month\n\nHealthy projects will have median first response times around 1 - 2 days.\nThe median is indicated by the line contained within the bar.\nUnhealthy projects will have many days until the first response or see an increase in the time to first response.')
+
+    filename = output_filename(repo_name, 'first_response_pr')
+
+    fig.savefig(filename, bbox_inches='tight')
+
+    print('\nTime to first response for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename, '\n')
 
 def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
 
