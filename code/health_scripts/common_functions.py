@@ -515,7 +515,7 @@ def response_time(repo_id, repo_name, start_date, end_date, engine):
     my_plot = sns.boxplot(x='yearmonth', y='diff_days', data=pr_all, ax=ax, order=year_month_list, showfliers = False, whis=3).set_title(title, fontsize=30)
 
     risk_bar_labels = ax.set_ylabel('First Response in Days')
-    risk_bar_labels = ax.set_xlabel('Year-Month\n\nHealthy projects will have median first response times around 1 - 2 days.\nThe median is indicated by the line contained within the bar.\nUnhealthy projects will have many days until the first response or see an increase in the time to first response.')
+    risk_bar_labels = ax.set_xlabel('Year-Month\n\nHealthy projects will have median first response times of about 1 day.\nThe median is indicated by the line contained within the bar.\nUnhealthy projects will have multiple days until the first response.')
 
     filename = output_filename(repo_name, 'first_response_pr')
 
