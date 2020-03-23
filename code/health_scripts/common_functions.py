@@ -315,7 +315,7 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
         if (num_people < 3 and j <= num_people):
             bar_colors.append('red')
         else:
-            bar_colors.append('blue')
+            bar_colors.append('lightblue')
     
         j+=1
     
@@ -335,9 +335,11 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
     title = repo_name + "\nContributor Risk Metric Assessment: "
 
     if num_people < 3:
+        risk = 'AT RISK'
         title += "AT RISK"
         title_color = 'firebrick'
     else:
+        risk = 'HEALTHY'
         title += "Healthy"
         title_color = 'forestgreen'
     title += "\n" + str(num_people) + " people made up " + "{:.0%}".format(risk_percent) + " of the commits in the past year.\n"
@@ -346,7 +348,7 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
 
     risk_bar_labels = ax.set_xticklabels(names, wrap=True)
     risk_bar_labels = ax.set_ylabel('Commits')
-    risk_bar_labels = ax.set_xlabel('\nKey Contributors\n\nA healthy project should have at a minimum 3 people who combined account for the majority (>50%) of the commits.\nThe higher this number is, the more likely your project would succeed if a leading contributor suddenly left the project.')
+    risk_bar_labels = ax.set_xlabel('\nKey Contributors\n\nA healthy project should have at a minimum 3 people who combined account for the majority (>50%) of the commits.\nThe higher this number is, the more likely your project would succeed if a leading contributor suddenly left the project.\nRed bars indicate when less than 3 people have majority of commits. Light blue for other contributors.')
 
     i = 0
     for p in ax.patches:
@@ -359,7 +361,10 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
 
     fig.savefig(filename, bbox_inches='tight')
 
-    print('\nContributor Risk for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename, '\n')
+    print('\nContributor Risk for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
+    print(risk, '-', num_people, 'people make up > 50% of the commits in the past year\n')
+
+    return num_people, risk
 
 def response_time_data(repo_id, repo_name, start_date, end_date, engine):
 
@@ -503,6 +508,21 @@ def response_time(repo_id, repo_name, start_date, end_date, engine):
     year_month_list = pr_all.yearmonth.unique()
     year_month_list.sort()
 
+    # set bar colors red for high first response and blue for good
+    first_response_median = pr_all.groupby(['repo_name', 'yearmonth'], as_index=False).median()[['repo_name', 'yearmonth', 'diff_days']]
+    bar_colors = []
+    k = 1
+    risk_num = 0
+    for med in first_response_median.diff_days:
+        if med > 1:
+            bar_colors.append('red')
+            if k >= 6:
+                risk_num+=1
+        else:
+            bar_colors.append('lightblue')
+        k+=1
+
+    # Start setting up plot configuration
     matplotlib.use('Agg') #prevents from tying to send plot to screen
     sns.set_style('ticks')
     sns.set(style="whitegrid", font_scale=2)
@@ -510,18 +530,31 @@ def response_time(repo_id, repo_name, start_date, end_date, engine):
     fig, ax = plt.subplots()
     fig.set_size_inches(24, 8)
 
-    title = repo_name + "\nTimely Responses:\nFirst response time (in days) for PRs"
+    # Color code title and indicate whether healthy or not
+    title = repo_name + "\nTimely Responses:"
 
-    my_plot = sns.boxplot(x='yearmonth', y='diff_days', data=pr_all, ax=ax, order=year_month_list, showfliers = False, whis=3).set_title(title, fontsize=30)
+    if risk_num >= 1:
+        risk = 'AT RISK'
+        title += " AT RISK\n" + str(risk_num) + " month(s) with median response times > 1 day in the past 6 months"
+        title_color = 'firebrick'
+    else:
+        risk = 'HEALTHY'
+        title += " Healthy\nNo months with median first response times > 1 day in the past 6 months"
+        title_color = 'forestgreen'
+
+    my_plot = sns.boxplot(x='yearmonth', y='diff_days', palette=bar_colors, data=pr_all, ax=ax, order=year_month_list, showfliers = False, whis=3).set_title(title, fontsize=30, color=title_color)
 
     risk_bar_labels = ax.set_ylabel('First Response in Days')
-    risk_bar_labels = ax.set_xlabel('Year-Month\n\nHealthy projects will have median first response times of about 1 day.\nThe median is indicated by the line contained within the bar.\nUnhealthy projects will have multiple days until the first response.')
+    risk_bar_labels = ax.set_xlabel('Year-Month\n\nHealthy projects will have median first response times of about 1 day.\nThe median is indicated by the line contained within the bar.\nRed bars indicate median first response times > 1. Light blue for <= 1.')
 
     filename = output_filename(repo_name, 'first_response_pr')
 
     fig.savefig(filename, bbox_inches='tight')
 
-    print('\nTime to first response for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename, '\n')
+    print('\nTime to first response for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
+    print(risk, '-', risk_num, 'months have median response times of more than 1 day in the past 6 months\n')
+
+    return risk_num, risk
 
 def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
 
@@ -543,6 +576,7 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
 
     pr_sustainDF['all_total'] = all_prsDF['total_prs_open_closed']
     pr_sustainDF['diff'] = pr_sustainDF['all_total'] - pr_sustainDF['closed_total']
+    pr_sustainDF['diff_per'] = pr_sustainDF['diff'] / pr_sustainDF['all_total']
 
     # Disply results on a graph
     pr_sustainDF['repo_id'] = pr_sustainDF['repo_id'].map(int)
@@ -557,10 +591,26 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
     # the size of A4 paper
     fig.set_size_inches(24, 8)
 
-    title = pr_sustainDF['repo_name'][0] + "\nSustains and Keeps up with Contributions Metric\nTotal vs Closed Pull Request Comparison"
+    risk_num = 0
+    h = 1
+    for diff_per in pr_sustainDF['diff_per']:
+        if (diff_per > 0.10 and h >=6):
+            risk_num+=1
+        h+=1
+
+    title = pr_sustainDF['repo_name'][0] + "\nSustains and Keeps up with Contributions Metric:"
+
+    if risk_num >= 1:
+        risk = 'AT RISK'
+        title += " AT RISK\n" + str(risk_num) + " month(s) with > 10% of total pull requests not closed"
+        title_color = 'firebrick'
+    else:
+        risk = 'HEALTHY'
+        title += " Healthy\nMore than 90% of total pull requests are closed each month."
+        title_color = 'forestgreen'
 
     plottermonth = sns.lineplot(x='yearmonth', y='all_total', data=pr_sustainDF, sort=False, color='black', label='Total', linewidth=2.5)
-    plottermonth = sns.lineplot(x='yearmonth', y='closed_total', data=pr_sustainDF, sort=False, color='green', label='Closed', linewidth=2.5, linestyle='dashed').set_title(title, fontsize=30) 
+    plottermonth = sns.lineplot(x='yearmonth', y='closed_total', data=pr_sustainDF, sort=False, color='green', label='Closed', linewidth=2.5, linestyle='dashed').set_title(title, fontsize=30, color=title_color) 
 
     plottermonthlabels = ax.set_xticklabels(pr_sustainDF['yearmonth'])
     plottermonthlabels = ax.set_ylabel('Number of PRs')
@@ -570,4 +620,7 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
 
     fig.savefig(filename, bbox_inches='tight')
 
-    print('\nSustaining and keeping up with contributions for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename, '\n')
+    print('\nSustaining and keeping up with contributions for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
+    print(risk, '- Number of months in the past 6 months with > 10% of PRs not closed', risk_num, '\n')
+
+    return risk_num, risk

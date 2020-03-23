@@ -14,8 +14,8 @@ repo_id, org_name, repo_name = get_repo_info(engine)
 
 start_date, end_date = get_dates(days)
 
-sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine)
+sustain_risk_num, sustain_risk = sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine)
 
-contributor_risk(repo_id, repo_name, start_date, end_date, engine)
+contrib_risk_num, contrib_risk = contributor_risk(repo_id, repo_name, start_date, end_date, engine)
 
-response_time(repo_id, repo_name, start_date, end_date, engine)
+response_risk_num, response_risk = response_time(repo_id, repo_name, start_date, end_date, engine)
