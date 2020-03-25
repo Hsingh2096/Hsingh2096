@@ -262,7 +262,7 @@ def output_filename(repo_name, metric_string):
     today = datetime.date.today()
     current_year_month = str(today.year) + '-' + '{:02d}'.format(today.month)
 
-    filename = 'output/' +  metric_string + '_' + repo_name + "_" + current_year_month + '.png'
+    filename = 'output/' + repo_name + "_" + metric_string + '_' + current_year_month + '.png'
 
     return filename
 
@@ -360,6 +360,7 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
     filename = output_filename(repo_name, 'contrib_risk_commits')
 
     fig.savefig(filename, bbox_inches='tight')
+    plt.close(fig)
 
     print('\nContributor Risk for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
     print(risk, '-', num_people, 'people make up > 50% of the commits in the past year\n')
@@ -550,6 +551,7 @@ def response_time(repo_id, repo_name, start_date, end_date, engine):
     filename = output_filename(repo_name, 'first_response_pr')
 
     fig.savefig(filename, bbox_inches='tight')
+    plt.close(fig)
 
     print('\nTime to first response for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
     print(risk, '-', risk_num, 'months have median response times of more than 1 day in the past 6 months\n')
@@ -619,6 +621,7 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
     filename = output_filename(repo_name, 'sustains_pr')
 
     fig.savefig(filename, bbox_inches='tight')
+    plt.close(fig)
 
     print('\nSustaining and keeping up with contributions for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
     print(risk, '- Number of months in the past 6 months with > 10% of PRs not closed', risk_num, '\n')
