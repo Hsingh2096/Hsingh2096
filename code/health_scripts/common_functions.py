@@ -221,9 +221,10 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
     commitsDF = pd.DataFrame()
     commitsquery = f"""
                     SELECT
+                        DISTINCT(cmt_commit_hash),
                         CASE WHEN contributors.cntrb_canonical IS NOT NULL THEN contributors.cntrb_canonical ELSE cmt_author_email END AS cntrb_canonical,
                         CASE WHEN canonical_full_names.cntrb_full_name IS NOT NULL THEN canonical_full_names.cntrb_full_name ELSE cmt_author_name END AS canonical_full_name,
-                        cmt_author_name, cmt_author_email, repo_id, cmt_id, cmt_author_timestamp 
+                        cmt_author_name, cmt_author_email, repo_id, cmt_author_timestamp 
                     FROM commits 
                         LEFT OUTER JOIN contributors ON cntrb_email = cmt_author_email
                         LEFT OUTER JOIN (
@@ -245,7 +246,7 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
                     """
     
     commitsDF = pd.read_sql_query(commitsquery, con=engine)
-    total_commits = commitsDF.cmt_id.nunique()    
+    total_commits = commitsDF.cmt_commit_hash.nunique()    
 
     authorDF = pd.DataFrame()
     authorDF = commitsDF.canonical_full_name.value_counts()
