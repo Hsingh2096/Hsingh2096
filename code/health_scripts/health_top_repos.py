@@ -12,14 +12,14 @@ engine = augur_db_connect()
 
 try:
     csv_output = open('output/risk_assessment.csv', 'w')
-    csv_output.write('repo_path,repo_name,repo_id,commits,sustain_risk,sustain_risk_num,contrib_risk,contrib_risk_num,response_risk,response_risk_num\n')
+    csv_output.write('repo_path,repo_name,repo_id,commits,overall_risk,sustain_risk,sustain_risk_num,contrib_risk,contrib_risk_num,response_risk,response_risk_num\n')
 except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
 
 start_date, end_date = get_dates(year)
 six_start_date, six_end_date = get_dates(six_months)
-commit_threshold = 50
+commit_threshold = 50 # should be 50, 1000 for testing
 
 repo_list_commits = get_commits_by_repo(six_start_date, six_end_date, engine)
 
@@ -37,13 +37,27 @@ for index, repo in top.iterrows():
     csv_output.write(repo_info)
 
     try:
+        # gather data
         sustain_risk_num, sustain_risk = sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine)
         contrib_risk_num, contrib_risk = contributor_risk(repo_id, repo_name, start_date, end_date, engine)
         response_risk_num, response_risk = response_time(repo_id, repo_name, start_date, end_date, engine)
-        risk_info = sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + '\n'
+
+        # calculate overall risk score
+        risk_count = [sustain_risk, contrib_risk, response_risk].count('AT RISK')
+        if risk_count == 0:
+            overall_risk = 'LOW RISK'
+        if risk_count == 1:
+            overall_risk = 'MEDIUM RISK'
+        if risk_count >= 2:
+            overall_risk = 'HIGH RISK'
+        
+        print(overall_risk)
+        
+        # write data to csv file
+        risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + '\n'
         csv_output.write(risk_info)
     except:
-        csv_output.write(',,,,,\n')
+        csv_output.write(',,,,,,\n')
 
 
 
