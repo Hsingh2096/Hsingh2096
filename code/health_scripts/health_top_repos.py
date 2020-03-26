@@ -19,7 +19,7 @@ except:
 
 start_date, end_date = get_dates(year)
 six_start_date, six_end_date = get_dates(six_months)
-commit_threshold = 50 # should be 50, 1000 for testing
+commit_threshold = 0 # should be 50, 1000 for testing
 
 repo_list_commits = get_commits_by_repo(six_start_date, six_end_date, engine)
 
@@ -46,9 +46,9 @@ for index, repo in top.iterrows():
         risk_count = [sustain_risk, contrib_risk, response_risk].count('AT RISK')
         if risk_count == 0:
             overall_risk = 'LOW RISK'
-        if risk_count == 1:
+        elif (risk_count == 1 or risk_count == 2):
             overall_risk = 'MEDIUM RISK'
-        if risk_count >= 2:
+        elif risk_count == 3:
             overall_risk = 'HIGH RISK'
         
         print(overall_risk)
