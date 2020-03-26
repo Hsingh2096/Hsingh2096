@@ -535,13 +535,13 @@ def response_time(repo_id, repo_name, start_date, end_date, engine):
     # Color code title and indicate whether healthy or not
     title = repo_name + "\nTimely Responses:"
 
-    if risk_num >= 1:
+    if risk_num >= 2:
         risk = 'AT RISK'
-        title += " AT RISK\n" + str(risk_num) + " month(s) with median response times > 1 day in the past 6 months"
+        title += " AT RISK\n" + str(risk_num) + " months with median response times > 1 day in the past 6 months"
         title_color = 'firebrick'
     else:
         risk = 'HEALTHY'
-        title += " Healthy\nNo months with median first response times > 1 day in the past 6 months"
+        title += " Healthy\n" + str(risk_num) + "  month(s) with median first response times > 1 day in the past 6 months"
         title_color = 'forestgreen'
 
     my_plot = sns.boxplot(x='yearmonth', y='diff_days', palette=bar_colors, data=pr_all, ax=ax, order=year_month_list, showfliers = False, whis=3).set_title(title, fontsize=30, color=title_color)
@@ -603,13 +603,13 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
 
     title = pr_sustainDF['repo_name'][0] + "\nSustains and Keeps up with Contributions Metric:"
 
-    if risk_num >= 1:
+    if risk_num >= 2:
         risk = 'AT RISK'
-        title += " AT RISK\n" + str(risk_num) + " month(s) with > 10% of total pull requests not closed"
+        title += " AT RISK\n" + str(risk_num) + " month(s) with > 10% of total pull requests not closed in the past 6 months"
         title_color = 'firebrick'
     else:
         risk = 'HEALTHY'
-        title += " Healthy\nMore than 90% of total pull requests are closed each month."
+        title += " Healthy\nMore than 90% of total pull requests were closed for " + str(6 - risk_num) + " out of the past 6 months."
         title_color = 'forestgreen'
 
     plottermonth = sns.lineplot(x='yearmonth', y='all_total', data=pr_sustainDF, sort=False, color='black', label='Total', linewidth=2.5)
