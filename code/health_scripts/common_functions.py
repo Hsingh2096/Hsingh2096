@@ -18,7 +18,10 @@ def augur_db_connect():
 def get_overall_risk(sustain_risk, contrib_risk, response_risk):
     # calculate overall risk score
     risk_count = [sustain_risk, contrib_risk, response_risk].count('AT RISK')
-    if risk_count == 0:
+    no_data_count = [sustain_risk, contrib_risk, response_risk].count('NO DATA')
+    if no_data_count > 0:
+        overall_risk = 'MISSING DATA'
+    elif risk_count == 0:
         overall_risk = 'LOW RISK'
     elif (risk_count == 1 or risk_count == 2):
         overall_risk = 'MEDIUM RISK'
@@ -533,9 +536,14 @@ def response_time(repo_id, repo_name, start_date, end_date, engine):
 
     pr_all = response_time_data(repo_id, repo_name, start_date, end_date, engine)
 
-    pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
-    pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
-    pr_all['diff_days'] = pr_all['diff'] / datetime.timedelta(days=1)
+    # Wrap in try except for projects with no PRs.
+    try:
+        pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
+        pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
+        pr_all['diff_days'] = pr_all['diff'] / datetime.timedelta(days=1)
+    except:
+        return -1, 'NO DATA'
+
     year_month_list = pr_all.yearmonth.unique()
     year_month_list.sort()
 
@@ -600,6 +608,9 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
     all_prsDF = monthly_prs_all(repo_id, repo_name, start_date, end_date, engine)
 
     pr_sustainDF = pd.DataFrame()
+
+    if len(pr_sustainDF) == 0:
+        return -1, 'NO DATA'
 
     pr_sustainDF['yearmonth'] = closed_prsDF['yearmonth']
     pr_sustainDF['repo_name'] = closed_prsDF['repo_name']
