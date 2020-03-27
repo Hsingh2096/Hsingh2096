@@ -256,14 +256,28 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
 
     return authorDF
 
-def output_filename(repo_name, metric_string): 
+def output_filename(repo_name, repo_id, metric_string): 
 
     import datetime
+    import pandas as pd
+    from common_functions import augur_db_connect
 
     today = datetime.date.today()
     current_year_month = str(today.year) + '-' + '{:02d}'.format(today.month)
 
-    filename = 'output/' + repo_name + "_" + metric_string + '_' + current_year_month + '.png'
+    # Get org_name
+    engine = augur_db_connect()
+    repo_info = pd.DataFrame()
+    repo_info_query = f"""
+                      SELECT repo_groups.rg_name from repo_groups, repo
+                      WHERE 
+                          repo.repo_id = {repo_id}
+                          AND repo.repo_group_id = repo_groups.repo_group_id;
+                     """
+    repo_info = pd.read_sql_query(repo_info_query, con=engine)
+    org_name = repo_info.rg_name[0]
+
+    filename = 'output/' + repo_name + '_' + org_name + '_'  + metric_string + '_' + current_year_month + '.png'
 
     return filename
 
@@ -361,7 +375,7 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
             textcoords='offset points')
         i+=1
 
-    filename = output_filename(repo_name, 'contrib_risk_commits')
+    filename = output_filename(repo_name, repo_id, 'contrib_risk_commits')
 
     fig.savefig(filename, bbox_inches='tight')
     plt.close(fig)
@@ -552,7 +566,7 @@ def response_time(repo_id, repo_name, start_date, end_date, engine):
     risk_bar_labels = ax.set_ylabel('First Response in Days')
     risk_bar_labels = ax.set_xlabel('Year-Month\n\nHealthy projects will have median first response times of about 1 day.\nThe median is indicated by the line contained within the bar.\nRed bars indicate median first response times > 1. Light blue for <= 1.')
 
-    filename = output_filename(repo_name, 'first_response_pr')
+    filename = output_filename(repo_name, repo_id, 'first_response_pr')
 
     fig.savefig(filename, bbox_inches='tight')
     plt.close(fig)
@@ -622,7 +636,7 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
     plottermonthlabels = ax.set_ylabel('Number of PRs')
     plottermonthlabels = ax.set_xlabel('Year Month\n\nInterpretation: Healthy projects will have little or no gap. A large or increasing gap requires attention.')
 
-    filename = output_filename(repo_name, 'sustains_pr')
+    filename = output_filename(repo_name, repo_id, 'sustains_pr')
 
     fig.savefig(filename, bbox_inches='tight')
     plt.close(fig)
