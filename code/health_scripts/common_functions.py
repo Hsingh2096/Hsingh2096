@@ -15,6 +15,18 @@ def augur_db_connect():
 
     return engine
 
+def get_overall_risk(sustain_risk, contrib_risk, response_risk):
+    # calculate overall risk score
+    risk_count = [sustain_risk, contrib_risk, response_risk].count('AT RISK')
+    if risk_count == 0:
+        overall_risk = 'LOW RISK'
+    elif (risk_count == 1 or risk_count == 2):
+        overall_risk = 'MEDIUM RISK'
+    elif risk_count == 3:
+        overall_risk = 'HIGH RISK'
+
+    return overall_risk
+
 def get_repo_info(engine):
     import sys
     import pandas as pd

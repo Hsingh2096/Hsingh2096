@@ -1,7 +1,7 @@
 import sys
 import io
 from contextlib import redirect_stdout
-from common_functions import augur_db_connect, get_repo_info, get_dates
+from common_functions import augur_db_connect, get_repo_info, get_dates, get_overall_risk
 from common_functions import sustain_prs_by_repo, contributor_risk, response_time
 from top_repos_common import get_commits_by_repo
 
@@ -46,14 +46,7 @@ for index, repo in top.iterrows():
             contrib_risk_num, contrib_risk = contributor_risk(repo_id, repo_name, start_date, end_date, engine)
             response_risk_num, response_risk = response_time(repo_id, repo_name, start_date, end_date, engine)
 
-        # calculate overall risk score
-        risk_count = [sustain_risk, contrib_risk, response_risk].count('AT RISK')
-        if risk_count == 0:
-            overall_risk = 'LOW RISK'
-        elif (risk_count == 1 or risk_count == 2):
-            overall_risk = 'MEDIUM RISK'
-        elif risk_count == 3:
-            overall_risk = 'HIGH RISK'
+        overall_risk = get_overall_risk(sustain_risk, contrib_risk, response_risk)
         
         # write data to csv file
         risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + '\n'
