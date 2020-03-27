@@ -297,6 +297,9 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
             risk_percent = cum_percent
         
         if i == 8:
+            if cum_percent <= .70:
+                risk_percent = cum_percent
+                num_people = i
             break
         i+=1
     
