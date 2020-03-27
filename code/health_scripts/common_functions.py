@@ -607,7 +607,7 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
     all_prsDF = monthly_prs_all(repo_id, repo_name, start_date, end_date, engine)
 
     # Return with no data if there are no PRs
-    if len(all_prsDF) == 0:
+    if all_prsDF['total_prs_open_closed'].sum() == 0:
         return -1, 'NO DATA'
 
     closed_prsDF = monthly_prs_closed(repo_id, repo_name, start_date, end_date, engine)
