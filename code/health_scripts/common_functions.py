@@ -604,13 +604,15 @@ def sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine):
     import matplotlib.pyplot as plt
     import datetime
 
-    closed_prsDF = monthly_prs_closed(repo_id, repo_name, start_date, end_date, engine)
     all_prsDF = monthly_prs_all(repo_id, repo_name, start_date, end_date, engine)
 
-    pr_sustainDF = pd.DataFrame()
-
-    if len(pr_sustainDF) == 0:
+    # Return with no data if there are no PRs
+    if len(all_prsDF) == 0:
         return -1, 'NO DATA'
+
+    closed_prsDF = monthly_prs_closed(repo_id, repo_name, start_date, end_date, engine)
+
+    pr_sustainDF = pd.DataFrame()
 
     pr_sustainDF['yearmonth'] = closed_prsDF['yearmonth']
     pr_sustainDF['repo_name'] = closed_prsDF['repo_name']
