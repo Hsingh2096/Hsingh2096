@@ -396,7 +396,7 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
     plt.close(fig)
 
     print('\nContributor Risk for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
-    print(risk, '-', num_people, 'people make up > 50% of the commits in the past year\n')
+    print(risk, '-', num_people, 'people make up > 70% of the commits in the past year\n')
 
     return num_people, risk
 
