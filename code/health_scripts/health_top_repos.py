@@ -1,5 +1,7 @@
 import sys
-from common_functions import augur_db_connect, get_repo_info, get_dates
+import io
+from contextlib import redirect_stdout
+from common_functions import augur_db_connect, get_repo_info, get_dates, get_overall_risk
 from common_functions import sustain_prs_by_repo, contributor_risk, response_time
 from top_repos_common import get_commits_by_repo
 
@@ -11,7 +13,7 @@ engine = augur_db_connect()
 # prepare csv file and write header row
 
 try:
-    csv_output = open('output/risk_assessment.csv', 'w')
+    csv_output = open('output/a_risk_assessment.csv', 'w')
     csv_output.write('repo_path,repo_name,repo_id,commits,overall_risk,sustain_risk,sustain_risk_num,contrib_risk,contrib_risk_num,response_risk,response_risk_num\n')
 except:
     print('Could not write to csv file. Exiting')
@@ -19,7 +21,7 @@ except:
 
 start_date, end_date = get_dates(year)
 six_start_date, six_end_date = get_dates(six_months)
-commit_threshold = 0 # should be 50, 1000 for testing
+commit_threshold = 50 # should be 50, 1000 for testing
 
 repo_list_commits = get_commits_by_repo(six_start_date, six_end_date, engine)
 
@@ -31,27 +33,20 @@ for index, repo in top.iterrows():
     repo_name = repo['repo_name']
     repo_path = repo['repo_path']
 
-    print(repo_id, repo_name, repo_path, repo['count'])
+    print("Processing:", repo_name, repo_path, repo_id, repo['count'])
 
     repo_info = repo_path + ',' + repo_name + ',' + str(repo_id) + ',' + str(repo['count']) + ','
     csv_output.write(repo_info)
 
     try:
-        # gather data
-        sustain_risk_num, sustain_risk = sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine)
-        contrib_risk_num, contrib_risk = contributor_risk(repo_id, repo_name, start_date, end_date, engine)
-        response_risk_num, response_risk = response_time(repo_id, repo_name, start_date, end_date, engine)
+        # gather data but suppress printing from these calls
+        suppress = io.StringIO()
+        with redirect_stdout(suppress):
+            sustain_risk_num, sustain_risk = sustain_prs_by_repo(repo_id, repo_name, start_date, end_date, engine)
+            contrib_risk_num, contrib_risk = contributor_risk(repo_id, repo_name, start_date, end_date, engine)
+            response_risk_num, response_risk = response_time(repo_id, repo_name, start_date, end_date, engine)
 
-        # calculate overall risk score
-        risk_count = [sustain_risk, contrib_risk, response_risk].count('AT RISK')
-        if risk_count == 0:
-            overall_risk = 'LOW RISK'
-        elif (risk_count == 1 or risk_count == 2):
-            overall_risk = 'MEDIUM RISK'
-        elif risk_count == 3:
-            overall_risk = 'HIGH RISK'
-        
-        print(overall_risk)
+        overall_risk = get_overall_risk(sustain_risk, contrib_risk, response_risk)
         
         # write data to csv file
         risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + '\n'
