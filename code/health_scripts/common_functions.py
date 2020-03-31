@@ -375,7 +375,11 @@ def contributor_risk(repo_id, repo_name, start_date, end_date, engine):
         risk = 'HEALTHY'
         title += "Healthy"
         title_color = 'forestgreen'
-    title += "\n" + str(num_people) + " people made up " + "{:.0%}".format(risk_percent) + " of the commits in the past year.\n"
+
+    # reformat dates
+    start = start_date.replace("'", '')
+    end = end_date.replace("'", '')
+    title += "\n" + str(num_people) + " people made up " + "{:.0%}".format(risk_percent) + " of the commits from " + start + " to " + end + ".\n"
 
     risk_bar = sns.barplot(x=names, y=commits, palette=bar_colors).set_title(title, fontsize=30, color=title_color)
 
