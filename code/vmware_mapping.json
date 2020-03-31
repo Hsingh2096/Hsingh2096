@@ -77,6 +77,13 @@
         {"type":"any", "target":["name", "Oren Shomron"], "match_attr":"email", "match_patterns":["shomron@gmail.com"]},
         {"type":"any", "target":["name", "Derek Wilson"], "match_attr":"email", "match_patterns":["derek@heptio.com", "jderekwilson@gmail.com"]},
         {"type":"any", "target":["name", "Eric Anderson"], "match_attr":"email", "match_patterns":["eric@heptio.com"]},
-        {"type":"any", "target":["name", "Kate Kuchin"], "match_attr":"email", "match_patterns":["kate.kuchin@gmail.com"]}
+        {"type":"any", "target":["name", "Kate Kuchin"], "match_attr":"email", "match_patterns":["kate.kuchin@gmail.com"]},
+        {"type":"any", "target":["name", "Alex Suraci"], "match_attr":"email", "match_patterns":["suraci.alex@gmail.com", "asuraci@pivotal.io","alex@localhost.localdomain"]},
+        {"type":"any", "target":["name", "Julian Zucker"], "match_attr":"email", "match_patterns":["julian.zucker@gmail.com"]},
+        {"type":"any", "target":["name", "Sahil Muthoo"], "match_attr":"email", "match_patterns":["sahil.muthoo@gmail.com"]},
+        {"type":"any", "target":["name", "Faisal Ali"], "match_attr":"email", "match_patterns":["fali@pivotal.io", "fai28683@gmail.com"]},
+        {"type":"any", "target":["name", "Daniel Garnier"], "match_attr":"email", "match_patterns":["dgarnier@pivotal.io", "git@garnier.wf"]},
+        {"type":"any", "target":["name", "Matthew Heidemann"], "match_attr":"email", "match_patterns":["matthew.heidemann@gmail.com"]},
+        {"type":"any", "target":["name", "Luis Urraca"],, "match_attr":"email", "match_patterns":["me@lurraca.com", "lurraca@pivotal.io"]}
     ]
 }
