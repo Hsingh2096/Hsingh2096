@@ -15,17 +15,17 @@ def augur_db_connect():
 
     return engine
 
-def get_overall_risk(sustain_risk, contrib_risk, response_risk):
+def get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk):
     # calculate overall risk score
-    risk_count = [sustain_risk, contrib_risk, response_risk].count('AT RISK')
-    no_data_count = [sustain_risk, contrib_risk, response_risk].count('NO DATA')
+    risk_count = [sustain_risk, contrib_risk, response_risk, release_risk].count('AT RISK')
+    no_data_count = [sustain_risk, contrib_risk, response_risk, release_risk].count('NO DATA')
     if no_data_count > 0:
         overall_risk = 'MISSING DATA'
     elif risk_count == 0:
         overall_risk = 'LOW RISK'
     elif (risk_count == 1 or risk_count == 2):
         overall_risk = 'MEDIUM RISK'
-    elif risk_count == 3:
+    elif (risk_count == 3 or risk_count == 4):
         overall_risk = 'HIGH RISK'
 
     return overall_risk
@@ -77,6 +77,91 @@ def get_dates(days):
     start_date = "'" + str(start) + "'"
 
     return start_date, end_date
+
+def read_key(file_name):
+
+    # Reads the first line of a file containing the GitHub API key
+    # Usage: key = read_key('gh_key')
+    # Can also be the full path to the file with key
+
+    with open(file_name, 'r') as kf:
+        key = kf.readline().rstrip() # remove newline & trailing whitespace
+    return key
+
+def get_release_data(repo_name, org_name, start_date, end_date):
+    from github import Github
+    import pandas as pd
+    import datetime 
+
+    gh_key = read_key('gh_key')
+    g = Github(gh_key)
+
+    releases = g.get_repo(org_name + '/' + repo_name).get_releases()
+
+    releases_df = pd.DataFrame(
+        [x, x.tag_name, x.published_at] for x in releases
+    )
+    releases_df.columns = ['release', 'name', 'date']
+
+    return releases_df
+
+def activity_release(repo_name, org_name, start_date, end_date):
+    import seaborn as sns
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as ticker
+    import datetime
+
+    try:
+        releases_df = get_release_data(repo_name, org_name, start_date, end_date)
+    except:
+        return -1, 'NO DATA'
+
+    start_dt = datetime.datetime.strptime(start_date[1:11], '%Y-%m-%d')
+    end_dt = datetime.datetime.strptime(end_date[1:11], '%Y-%m-%d')
+    six_mos_dt = end_dt - datetime.timedelta(days=180)
+
+    risk_num = 0
+    for release in releases_df['date']:
+        if (release >= six_mos_dt and release <= end_dt):
+            risk_num+=1
+
+    matplotlib.use('Agg') #prevents from tying to send plot to screen
+    sns.set(style="whitegrid", font_scale=2)
+
+    fig, ax = plt.subplots()
+
+    # the size of A4 paper
+    fig.set_size_inches(24, 8)
+
+    title = repo_name + "\nActively Maintained - Regular Releases Metric:"
+
+    if risk_num < 5:
+        risk = 'AT RISK'
+        title += " AT RISK\n" + str(risk_num) + " releases in the past 6 months."
+        title_color = 'firebrick'
+    else:
+        risk = 'HEALTHY'
+        title += " Healthy\n" + str(risk_num) + " releases in the past 6 months."
+        title_color = 'forestgreen'
+
+    ax.set_xlim(start_dt, end_dt)
+    ax.set_ylim(0,2)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.set(yticklabels=[])
+
+    plottermonth = sns.lineplot(y=1, x='date', data=releases_df, marker="X", linewidth=0, markersize=20).set_title(title, fontsize=30, color=title_color)
+    plottermonthlabels = ax.set_xlabel('Year Month\n\nInterpretation: Healthy projects will have at least 5 releases in the past 6 months.')
+
+    filename = output_filename(repo_name, org_name, 'activity_release')
+
+    fig.savefig(filename, bbox_inches='tight')
+    plt.close(fig)
+
+    print('\nActivity Release metric for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
+    print(risk, '-', risk_num, 'releases in the past 6 months\n')
+
+    return risk_num, risk
 
 def monthly_prs_closed(repo_id, repo_name, start_date, end_date, engine):
     import pandas as pd
@@ -271,7 +356,7 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
 
     return authorDF
 
-def output_filename(repo_name, org_name, repo_id, metric_string): 
+def output_filename(repo_name, org_name, metric_string): 
 
     import datetime
     import pandas as pd
@@ -382,7 +467,7 @@ def contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine)
             textcoords='offset points')
         i+=1
 
-    filename = output_filename(repo_name, org_name, repo_id, 'contrib_risk_commits')
+    filename = output_filename(repo_name, org_name, 'contrib_risk_commits')
 
     fig.savefig(filename, bbox_inches='tight')
     plt.close(fig)
@@ -586,7 +671,7 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
     risk_bar_labels = ax.set_ylabel('First Response in Days')
     risk_bar_labels = ax.set_xlabel('Year-Month\n\nHealthy projects will have median first response times of about 1 day.\nThe median is indicated by the line contained within the bar.\nRed bars indicate median first response times > 1. Light blue for <= 1.')
 
-    filename = output_filename(repo_name, org_name, repo_id, 'first_response_pr')
+    filename = output_filename(repo_name, org_name, 'first_response_pr')
 
     fig.savefig(filename, bbox_inches='tight')
     plt.close(fig)
@@ -661,7 +746,7 @@ def sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engi
     plottermonthlabels = ax.set_ylabel('Number of PRs')
     plottermonthlabels = ax.set_xlabel('Year Month\n\nInterpretation: Healthy projects will have little or no gap. A large or increasing gap requires attention.')
 
-    filename = output_filename(repo_name, org_name, repo_id, 'sustains_pr')
+    filename = output_filename(repo_name, org_name, 'sustains_pr')
 
     fig.savefig(filename, bbox_inches='tight')
     plt.close(fig)
