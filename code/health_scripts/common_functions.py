@@ -400,7 +400,7 @@ def response_time_data(repo_id, repo_name, start_date, end_date, engine):
     pr_all = pd.DataFrame()
 
     pr_query = s.sql.text(f"""
-                     SELECT
+                    SELECT
                         repo.repo_id AS repo_id,
                         pull_requests.pr_src_id AS pr_src_id,
                         repo.repo_name AS repo_name,
@@ -443,36 +443,44 @@ def response_time_data(repo_id, repo_name, start_date, end_date, engine):
                         commit_count, 
                         file_count
                     FROM
-                        repo,
-                        repo_groups,
-                        pull_requests LEFT OUTER JOIN ( 
+                    repo,
+                    repo_groups,
+                    pull_requests LEFT OUTER JOIN ( 
                             SELECT pull_requests.pull_request_id,
-                            count(*) FILTER (WHERE action = 'assigned') AS assigned_count,
-                            count(*) FILTER (WHERE action = 'review_requested') AS review_requested_count,
-                            count(*) FILTER (WHERE action = 'labeled') AS labeled_count,
-                            count(*) FILTER (WHERE action = 'unlabeled') AS unlabeled_count,
-                            count(*) FILTER (WHERE action = 'subscribed') AS subscribed_count,
-                            count(*) FILTER (WHERE action = 'mentioned') AS mentioned_count,
-                            count(*) FILTER (WHERE action = 'referenced') AS referenced_count,
-                            count(*) FILTER (WHERE action = 'closed') AS closed_count,
-                            count(*) FILTER (WHERE action = 'head_ref_force_pushed') AS head_ref_force_pushed_count,
-                            count(*) FILTER (WHERE action = 'head_ref_deleted') AS head_ref_deleted_count,
-                            count(*) FILTER (WHERE action = 'milestoned') AS milestoned_count,
-                            count(*) FILTER (WHERE action = 'merged') AS merged_count,
-                            MIN(message.msg_timestamp) AS first_response_time,
-                            COUNT(DISTINCT message.msg_timestamp) AS comment_count,
-                            MAX(message.msg_timestamp) AS last_response_time,
-                            (MAX(message.msg_timestamp) - MIN(message.msg_timestamp)) / COUNT(DISTINCT message.msg_timestamp) AS average_time_between_responses
-                            FROM pull_request_events, pull_requests, repo, pull_request_message_ref, message
+                                MIN(message.msg_timestamp) AS first_response_time,
+                                COUNT(DISTINCT message.msg_timestamp) AS comment_count,
+                                MAX(message.msg_timestamp) AS last_response_time,
+                                (MAX(message.msg_timestamp) - MIN(message.msg_timestamp)) / COUNT(DISTINCT message.msg_timestamp) AS average_time_between_responses
+                            FROM repo, 
+                                pull_requests left outer join pull_request_message_ref 
+                                on pull_requests.pull_request_id = pull_request_message_ref.pull_request_id
+                                left outer join message on pull_request_message_ref.msg_id = message.msg_id and cntrb_id not in (select cntrb_id from contributors where cntrb_login like '%[bot]')
                             WHERE repo.repo_id = {repo_id}
                             AND repo.repo_id = pull_requests.repo_id
-                            AND pull_requests.pull_request_id = pull_request_events.pull_request_id
-                            AND pull_requests.pull_request_id = pull_request_message_ref.pull_request_id
-                            AND pull_request_message_ref.msg_id = message.msg_id
                             GROUP BY pull_requests.pull_request_id
-                        ) response_times
-                        ON pull_requests.pull_request_id = response_times.pull_request_id
-                        LEFT OUTER JOIN (
+                    ) response_times
+                    ON pull_requests.pull_request_id = response_times.pull_request_id
+                    left outer join (
+                            SELECT pull_requests.pull_request_id,
+                                count(*) FILTER (WHERE action = 'assigned') AS assigned_count,
+                                count(*) FILTER (WHERE action = 'review_requested') AS review_requested_count,
+                                count(*) FILTER (WHERE action = 'labeled') AS labeled_count,
+                                count(*) FILTER (WHERE action = 'unlabeled') AS unlabeled_count,
+                                count(*) FILTER (WHERE action = 'subscribed') AS subscribed_count,
+                                count(*) FILTER (WHERE action = 'mentioned') AS mentioned_count,
+                                count(*) FILTER (WHERE action = 'referenced') AS referenced_count,
+                                count(*) FILTER (WHERE action = 'closed') AS closed_count,
+                                count(*) FILTER (WHERE action = 'head_ref_force_pushed') AS head_ref_force_pushed_count,
+                                count(*) FILTER (WHERE action = 'head_ref_deleted') AS head_ref_deleted_count,
+                                count(*) FILTER (WHERE action = 'milestoned') AS milestoned_count,
+                                count(*) FILTER (WHERE action = 'merged') AS merged_count
+                            from repo, pull_requests left outer join pull_request_events 
+                                on pull_requests.pull_request_id = pull_request_events.pull_request_id
+                            WHERE repo.repo_id = {repo_id}
+                                AND repo.repo_id = pull_requests.repo_id
+                            GROUP BY pull_requests.pull_request_id
+                    ) event_counts on event_counts.pull_request_id = pull_requests.pull_request_id
+                    LEFT OUTER JOIN (
                             SELECT pull_request_commits.pull_request_id, count(DISTINCT pr_cmt_sha) AS commit_count                                FROM pull_request_commits, pull_requests, pull_request_meta
                             WHERE pull_requests.pull_request_id = pull_request_commits.pull_request_id
                             AND pull_requests.pull_request_id = pull_request_meta.pull_request_id
@@ -480,18 +488,18 @@ def response_time_data(repo_id, repo_name, start_date, end_date, engine):
                             AND pr_cmt_sha <> pull_requests.pr_merge_commit_sha
                             AND pr_cmt_sha <> pull_request_meta.pr_sha
                             GROUP BY pull_request_commits.pull_request_id
-                        ) all_commit_counts
-                        ON pull_requests.pull_request_id = all_commit_counts.pull_request_id
-                        LEFT OUTER JOIN (
+                    ) all_commit_counts
+                    ON pull_requests.pull_request_id = all_commit_counts.pull_request_id
+                    LEFT OUTER JOIN (
                             SELECT MAX(pr_repo_meta_id), pull_request_meta.pull_request_id, pr_head_or_base, pr_src_meta_label
                             FROM pull_requests, pull_request_meta
                             WHERE pull_requests.pull_request_id = pull_request_meta.pull_request_id
                             AND pull_requests.repo_id = {repo_id}
                             AND pr_head_or_base = 'base'
                             GROUP BY pull_request_meta.pull_request_id, pr_head_or_base, pr_src_meta_label
-                        ) base_labels
-                        ON base_labels.pull_request_id = all_commit_counts.pull_request_id
-                        LEFT OUTER JOIN (
+                    ) base_labels
+                    ON base_labels.pull_request_id = pull_requests.pull_request_id
+                    LEFT OUTER JOIN (
                             SELECT sum(cmt_added) AS lines_added, sum(cmt_removed) AS lines_removed, pull_request_commits.pull_request_id, count(DISTINCT cmt_filename) AS file_count
                             FROM pull_request_commits, commits, pull_requests, pull_request_meta
                             WHERE cmt_commit_hash = pr_cmt_sha
@@ -502,8 +510,8 @@ def response_time_data(repo_id, repo_name, start_date, end_date, engine):
                             AND commits.cmt_commit_hash <> pull_requests.pr_merge_commit_sha
                             AND commits.cmt_commit_hash <> pull_request_meta.pr_sha
                             GROUP BY pull_request_commits.pull_request_id
-                        ) master_merged_counts 
-                        ON base_labels.pull_request_id = master_merged_counts.pull_request_id                    
+                    ) master_merged_counts 
+                    ON pull_requests.pull_request_id = master_merged_counts.pull_request_id                   
                     WHERE 
                         repo.repo_group_id = repo_groups.repo_group_id 
                         AND repo.repo_id = pull_requests.repo_id 
