@@ -18,7 +18,7 @@ def augur_db_connect():
 def get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk):
     # calculate overall risk score
     risk_count = [sustain_risk, contrib_risk, response_risk, release_risk].count('AT RISK')
-    no_data_count = [sustain_risk, contrib_risk, response_risk, release_risk].count('NO DATA')
+    no_data_count = [sustain_risk, contrib_risk, response_risk].count('NO DATA')
     if no_data_count > 0:
         overall_risk = 'MISSING DATA'
     elif risk_count == 0:
