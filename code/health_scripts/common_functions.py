@@ -346,13 +346,12 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
                         AND cmt_author_name NOT LIKE '%%bot'
                         AND cmt_author_name != 'Spring Operator'
                         AND cmt_author_name != 'Spring Buildmaster'
-                        AND cmt_author_timestamp >= {start_date}
-                        AND cmt_author_timestamp <= {end_date}
                     ORDER BY
                         cntrb_canonical;
                     """
     
-    commitsDF = pd.read_sql_query(commitsquery, con=engine)
+    all_commitsDF = pd.read_sql_query(commitsquery, con=engine)
+    commitsDF = all_commitsDF[(all_commitsDF['cmt_author_timestamp'] >= start_date) & (all_commitsDF['cmt_author_timestamp'] <= end_date)]
     total_commits = commitsDF.cmt_commit_hash.nunique()    
 
     authorDF = pd.DataFrame()
