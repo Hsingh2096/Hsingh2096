@@ -322,25 +322,25 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
     commitsquery = f"""
                     SELECT
                         DISTINCT(cmt_commit_hash),
-                        CASE WHEN contributors.cntrb_canonical IS NOT NULL THEN contributors.cntrb_canonical ELSE cmt_author_email END AS cntrb_canonical,
-                        CASE WHEN canonical_full_names.cntrb_full_name IS NOT NULL THEN canonical_full_names.cntrb_full_name ELSE cmt_author_name END AS canonical_full_name,
+                        contributors.cntrb_canonical,
+                        canonical_full_names.cntrb_full_name AS canonical_full_name,
                         cmt_author_name, cmt_author_email, repo_id, cmt_author_timestamp 
                     FROM commits 
-                        LEFT OUTER JOIN contributors ON cntrb_email = cmt_author_email
-                        LEFT OUTER JOIN (
-                            SELECT cntrb_canonical, cntrb_full_name 
+                        LEFT OUTER JOIN contributors ON cntrb_email = cmt_author_email left outer join 
+                        (
+                            SELECT distinct on (cntrb_canonical) cntrb_full_name, cntrb_canonical, data_collection_date
                             FROM contributors
                             WHERE cntrb_canonical = cntrb_email
-                        ) canonical_full_names
-                        ON canonical_full_names.cntrb_canonical = contributors.cntrb_canonical
-                    WHERE
-                        repo_id = {repo_id}
+                            order by cntrb_canonical
+                        ) canonical_full_names on canonical_full_names.cntrb_canonical = contributors.cntrb_canonical
+                    WHERE 
+                         repo_id = {repo_id}
                         AND cmt_author_name NOT LIKE 'snyk%%'
                         AND cmt_author_name NOT LIKE '%%bot'
                         AND cmt_author_name != 'Spring Operator'
                         AND cmt_author_name != 'Spring Buildmaster'
-                         AND cmt_author_timestamp >= {start_date}
-                         AND cmt_author_timestamp <= {end_date}
+                        AND cmt_author_timestamp >= {start_date}
+                        AND cmt_author_timestamp <= {end_date}
                     ORDER BY
                         cntrb_canonical;
                     """
