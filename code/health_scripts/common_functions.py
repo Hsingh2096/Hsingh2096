@@ -105,6 +105,14 @@ def get_release_data(repo_name, org_name, start_date, end_date):
 
     return releases_df
 
+def convert_dates(start_date, end_date):
+    import datetime
+
+    start_dt = datetime.datetime.strptime(start_date[1:11], '%Y-%m-%d')
+    end_dt = datetime.datetime.strptime(end_date[1:11], '%Y-%m-%d')
+
+    return start_dt, end_dt 
+
 def activity_release(repo_name, org_name, start_date, end_date):
     import seaborn as sns
     import matplotlib
@@ -117,8 +125,7 @@ def activity_release(repo_name, org_name, start_date, end_date):
     except:
         return -1, 'NO DATA'
 
-    start_dt = datetime.datetime.strptime(start_date[1:11], '%Y-%m-%d')
-    end_dt = datetime.datetime.strptime(end_date[1:11], '%Y-%m-%d')
+    start_dt, end_dt = convert_dates(start_date, end_date)
     six_mos_dt = end_dt - datetime.timedelta(days=180)
 
     risk_num = 0
