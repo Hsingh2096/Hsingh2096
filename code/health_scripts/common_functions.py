@@ -143,7 +143,9 @@ def activity_release(repo_name, org_name, start_date, end_date):
 
     title = repo_name + "\nActively Maintained - Regular Releases Metric:"
 
-    if risk_num < 5:
+    if risk_num == 0:
+        return -1, 'NO DATA'
+    elif risk_num < 5:
         risk = 'AT RISK'
         title += " AT RISK\n" + str(risk_num) + " releases in the past 6 months."
         title_color = 'firebrick'
