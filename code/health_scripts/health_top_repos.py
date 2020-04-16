@@ -52,7 +52,7 @@ for index, repo in top.iterrows():
         overall_risk = get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk)
         
         # write data to csv file
-        risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + ',' + release_risk  + ',' + str(release_risk) + '\n'
+        risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + ',' + release_risk  + ',' + str(release_risk_num) + '\n'
         csv_output.write(risk_info)
     except:
         csv_output.write(',,,,,,,,\n')
