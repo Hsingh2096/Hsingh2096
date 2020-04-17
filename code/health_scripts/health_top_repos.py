@@ -14,7 +14,7 @@ engine = augur_db_connect()
 
 try:
     csv_output = open('output/a_risk_assessment.csv', 'w')
-    csv_output.write('repo_path,repo_name,repo_id,commits,is_fork,overall_risk,sustain_risk,sustain_risk_num,contrib_risk,contrib_risk_num,response_risk,response_risk_num,release_risk,release_risk_num\n')
+    csv_output.write('repo_path,repo_name,commits,is_fork,overall_risk,sustain_risk,sustain_risk_num,contrib_risk,contrib_risk_num,response_risk,response_risk_num,release_risk,release_risk_num\n')
 except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
@@ -22,7 +22,7 @@ except:
 start_date, end_date = get_dates(year)
 six_start_date, six_end_date = get_dates(six_months)
 
-commit_threshold = 50 # should be 50, 1500 for testing
+commit_threshold = 2000 # should be 50, 1500 for testing
 
 repo_list_commits = get_commits_by_repo(six_start_date, six_end_date, engine)
 
@@ -40,7 +40,7 @@ for index, repo in top.iterrows():
     repo_api = repo_api_call(repo_name, org_name) 
     is_fork = repo_api.fork
 
-    repo_info = repo_path + ',' + repo_name + ',' + str(repo_id) + ',' + str(repo['count']) + ',' + str(is_fork) + ','
+    repo_info = repo_path + ',' + repo_name + ',' + str(repo['count']) + ',' + str(is_fork) + ','
     csv_output.write(repo_info)
 
     try:
@@ -59,7 +59,7 @@ for index, repo in top.iterrows():
         csv_output.write(risk_info)
 
     except:
-        csv_output.write(',,,,,,,,\n')
+        csv_output.write(',,,,,,,\n')
 
 
 
