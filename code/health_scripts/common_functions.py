@@ -144,6 +144,10 @@ def activity_release(repo_name, org_name, start_date, end_date, repo_api):
         if (release >= six_mos_dt and release <= end_dt):
             risk_num+=1
 
+    # return before creating plots if no release data in past 6 months
+    if risk_num == 0:
+        return -1, 'NO DATA'
+
     matplotlib.use('Agg') #prevents from tying to send plot to screen
     sns.set(style="whitegrid", font_scale=2)
 
@@ -154,9 +158,7 @@ def activity_release(repo_name, org_name, start_date, end_date, repo_api):
 
     title = repo_name + "\nActively Maintained - Regular Releases Metric:"
 
-    if risk_num == 0:
-        return -1, 'NO DATA'
-    elif risk_num < 5:
+    if risk_num < 5:
         risk = 'AT RISK'
         title += " AT RISK\n" + str(risk_num) + " releases in the past 6 months."
         title_color = 'firebrick'
