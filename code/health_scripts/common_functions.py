@@ -445,6 +445,10 @@ def contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine)
             bar_colors.append('lightblue')
     
         j+=1
+
+    # Exit early if num_people is 0
+    if num_people == 0:
+        return -1, 'NO DATA'
     
     names = [item[0] for item in risk_list]
     percents = [item[1] for item in risk_list]
