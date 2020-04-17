@@ -99,6 +99,7 @@ def repo_api_call(repo_name, org_name):
 
     except:
         print("Error making GH API call. Rate limit remaining", g.rate_limiting[0])
+        exit()
 
     return repo
 
