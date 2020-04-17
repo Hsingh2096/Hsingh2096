@@ -88,15 +88,25 @@ def read_key(file_name):
         key = kf.readline().rstrip() # remove newline & trailing whitespace
     return key
 
-def get_release_data(repo_name, org_name, start_date, end_date):
+def repo_api_call(repo_name, org_name):
     from github import Github
+
+    try:
+        gh_key = read_key('gh_key')
+        g = Github(gh_key)
+
+        repo = g.get_repo(org_name + '/' + repo_name)
+
+    except:
+        print("Error making GH API call. Rate limit remaining", g.rate_limiting[0])
+
+    return repo
+
+def get_release_data(repo_name, org_name, start_date, end_date, repo_api):
     import pandas as pd
     import datetime 
 
-    gh_key = read_key('gh_key')
-    g = Github(gh_key)
-
-    releases = g.get_repo(org_name + '/' + repo_name).get_releases()
+    releases = repo_api.get_releases()
 
     releases_df = pd.DataFrame(
         [x, x.tag_name, x.published_at] for x in releases
@@ -113,7 +123,7 @@ def convert_dates(start_date, end_date):
 
     return start_dt, end_dt 
 
-def activity_release(repo_name, org_name, start_date, end_date):
+def activity_release(repo_name, org_name, start_date, end_date, repo_api):
     import seaborn as sns
     import matplotlib
     import matplotlib.pyplot as plt
@@ -121,7 +131,7 @@ def activity_release(repo_name, org_name, start_date, end_date):
     import datetime
 
     try:
-        releases_df = get_release_data(repo_name, org_name, start_date, end_date)
+        releases_df = get_release_data(repo_name, org_name, start_date, end_date, repo_api)
     except:
         return -1, 'NO DATA'
 
