@@ -35,33 +35,28 @@ for index, repo in top.iterrows():
     repo_path = repo['repo_path']
     org_name = repo_path[11:(len(repo_path)-1)]
 
-    repo_api = repo_api_call(repo_name, org_name) 
-
     print("Processing:", org_name, repo_name, repo_path, repo_id, repo['count'])
 
+    repo_api = repo_api_call(repo_name, org_name) 
     is_fork = repo_api.fork
 
     repo_info = repo_path + ',' + repo_name + ',' + str(repo_id) + ',' + str(repo['count']) + ',' + str(is_fork) + ','
     csv_output.write(repo_info)
 
     try:
-        # Don't gather data for forks
-        if is_fork == False:
         # gather data but suppress printing from these calls
-            suppress = io.StringIO()
-            with redirect_stdout(suppress):
-                sustain_risk_num, sustain_risk = sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engine)
-                contrib_risk_num, contrib_risk = contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine)
-                response_risk_num, response_risk = response_time(repo_id, repo_name, org_name, start_date, end_date, engine)
-                release_risk_num, release_risk = activity_release(repo_name, org_name, start_date, end_date, repo_api)
+        suppress = io.StringIO()
+        with redirect_stdout(suppress):
+            sustain_risk_num, sustain_risk = sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engine)
+            contrib_risk_num, contrib_risk = contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine)
+            response_risk_num, response_risk = response_time(repo_id, repo_name, org_name, start_date, end_date, engine)
+            release_risk_num, release_risk = activity_release(repo_name, org_name, start_date, end_date, repo_api)
 
-            overall_risk = get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk)
+        overall_risk = get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk)
         
-            # write data to csv file
-            risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + ',' + release_risk  + ',' + str(release_risk_num) + '\n'
-            csv_output.write(risk_info)
-        else:
-            csv_output.write(',,,,,,,,\n')
+        # write data to csv file
+        risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + ',' + release_risk  + ',' + str(release_risk_num) + '\n'
+        csv_output.write(risk_info)
 
     except:
         csv_output.write(',,,,,,,,\n')
