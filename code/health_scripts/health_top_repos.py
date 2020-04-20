@@ -1,7 +1,7 @@
 import sys
 import io
 from contextlib import redirect_stdout
-from common_functions import augur_db_connect, get_repo_info, get_dates, get_overall_risk
+from common_functions import augur_db_connect, get_dates, get_overall_risk
 from common_functions import sustain_prs_by_repo, contributor_risk, response_time, activity_release, repo_api_call
 from top_repos_common import get_commits_by_repo
 
@@ -22,7 +22,7 @@ except:
 start_date, end_date = get_dates(year)
 six_start_date, six_end_date = get_dates(six_months)
 
-commit_threshold = 100 # should be 100, 1500 for testing
+commit_threshold = 90 # should be 1500 for testing
 
 repo_list_commits = get_commits_by_repo(six_start_date, six_end_date, engine)
 
