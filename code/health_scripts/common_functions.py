@@ -381,12 +381,16 @@ def output_filename(repo_name, org_name, metric_string):
 
     import datetime
     import pandas as pd
+    from pathlib import Path
     from common_functions import augur_db_connect
 
     today = datetime.date.today()
     current_year_month = str(today.year) + '-' + '{:02d}'.format(today.month)
 
-    filename = 'output/' + repo_name + '_' + org_name + '_'  + metric_string + '_' + current_year_month + '.png'
+    path = 'output/' + current_year_month + '/' + org_name + '/' + repo_name 
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+    filename = path + '/' + repo_name + '_' + metric_string + '_' + current_year_month + '.png'
 
     return filename
 
