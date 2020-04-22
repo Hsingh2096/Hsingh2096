@@ -90,6 +90,7 @@ def read_key(file_name):
 
 def repo_api_call(repo_name, org_name):
     from github import Github
+    import sys
 
     try:
         gh_key = read_key('gh_key')
@@ -101,7 +102,7 @@ def repo_api_call(repo_name, org_name):
         print("Error making GH API call. Rate limit remaining", g.rate_limiting[0])
         if g.rate_limiting[0] < 5:
             print("Exiting due to rate limit")
-            exit()
+            sys.exit()
         else:
             repo = False
 
