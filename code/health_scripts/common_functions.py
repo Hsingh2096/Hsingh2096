@@ -99,7 +99,7 @@ def repo_api_call(repo_name, org_name):
 
     except:
         print("Error making GH API call. Rate limit remaining", g.rate_limiting[0])
-        exit()
+        repo = False
 
     return repo
 
@@ -663,6 +663,7 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
 
     # set bar colors red for high first response and blue for good
     first_response_median = pr_all.groupby(['repo_name', 'yearmonth'], as_index=False).median()[['repo_name', 'yearmonth', 'diff_days']]
+    #first_response_median = pr_all.groupby(['repo_name', 'yearmonth'], as_index=False).mean()[['repo_name', 'yearmonth', 'diff_days']]
     bar_colors = []
     k = 1
     risk_num = 0

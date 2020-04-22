@@ -1,6 +1,6 @@
 import sys
 import pandas as pd
-from common_functions import augur_db_connect, get_repo_info, get_dates
+from common_functions import augur_db_connect, get_repo_info, get_dates, repo_api_call
 
 engine = augur_db_connect()
 
@@ -8,7 +8,7 @@ engine = augur_db_connect()
 
 try:
     csv_output = open('output/a_repo_activity.csv', 'w')
-    csv_output.write('repo_link,org,repo_name,last_updated,last_commiter,most_commits,most_num,second_most,second_num\n')
+    csv_output.write('repo_link,org,repo_name,is_fork,last_updated,last_commiter,most_commits,most_num,second_most,second_num\n')
 except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
@@ -33,7 +33,7 @@ by_repo = all_commits.loc[all_commits.groupby('repo_id').cmt_author_timestamp.id
 
 # Create list of donated orgs to exclude
 
-exclude_list = ["projectcontour", "goharbor"]
+exclude_list = ["projectcontour", "goharbor", "tern-tools"]
 
 # This gives us the top contributors per repo for the csv file 
 
@@ -44,9 +44,16 @@ for index, row in by_repo.iterrows():
     org = row.repo_path.split("/")[1]
 
     if org not in exclude_list:
-        basic_info = repo_link + ',' + org + ',' + row.repo_name + ',' + str(row.cmt_author_timestamp) + ',' + row.cmt_author_email + ','
+        try:
+            repo_api = repo_api_call(row.repo_name, org)
+            is_fork = repo_api.fork
+
+        except:
+            is_fork = 'API ERROR'
+
+        basic_info = repo_link + ',' + org + ',' + row.repo_name + ',' + str(is_fork) + ',' + str(row.cmt_author_timestamp) + ',' + row.cmt_author_email + ','
         csv_output.write(basic_info)
-    
+ 
         top_contribs = all_commits.loc[all_commits['repo_id'] == row.repo_id].cmt_author_email.value_counts()
         if len(top_contribs) > 1:
             committer_info = top_contribs.index[0] + ',' + str(top_contribs[0]) + ',' + top_contribs.index[1] + ',' + str(top_contribs[1]) + '\n'
@@ -54,5 +61,7 @@ for index, row in by_repo.iterrows():
             committer_info = top_contribs.index[0] + ',' + str(top_contribs[0]) + ',' + 'None' + ',' + 'None' + '\n'
         elif len(top_contribs) == 0:
             committer_info = 'None' + ',' + 'None' + ',' + 'None' + ',' + 'None' + '\n'
-        csv_output.write(committer_info)
+            csv_output.write(committer_info)
+#        except:
+#            csv_output.write(repo_link + ',' + org + ',' + row.repo_name + ',API_ERROR,,,,,,\n')
 
