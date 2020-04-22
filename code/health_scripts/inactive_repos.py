@@ -61,7 +61,7 @@ for index, row in by_repo.iterrows():
             committer_info = top_contribs.index[0] + ',' + str(top_contribs[0]) + ',' + 'None' + ',' + 'None' + '\n'
         elif len(top_contribs) == 0:
             committer_info = 'None' + ',' + 'None' + ',' + 'None' + ',' + 'None' + '\n'
-            csv_output.write(committer_info)
+        csv_output.write(committer_info)
 #        except:
 #            csv_output.write(repo_link + ',' + org + ',' + row.repo_name + ',API_ERROR,,,,,,\n')
 
