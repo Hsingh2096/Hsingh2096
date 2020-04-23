@@ -30,6 +30,23 @@ def get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk):
 
     return overall_risk
 
+def write_overall_risk_file(repo_name, org_name, overall_risk, sustain_risk, contrib_risk, response_risk, release_risk):
+    import sys
+
+    path = output_path(repo_name, org_name)
+    filename = path + '/' + repo_name + '_overall_risk.txt'
+
+    try:
+        output = open(filename, 'w')
+        output.write('Overall risk for ' + repo_name + ': ' + overall_risk + '\n\n')
+        output.write('Sustains / Keeps up with contributions: ' + sustain_risk + '\n')
+        output.write('Contributor risk: ' + contrib_risk + '\n')
+        output.write('Timely responses: ' + response_risk + '\n')
+        output.write('Releases: ' + release_risk + '\n')
+    except:
+        print('Could not write overall risk to file. Exiting')
+        sys.exit(1)
+
 def get_repo_info(engine):
     import sys
     import pandas as pd

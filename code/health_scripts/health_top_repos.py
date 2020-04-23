@@ -1,7 +1,7 @@
 import sys
 import io
 from contextlib import redirect_stdout
-from common_functions import augur_db_connect, get_dates, get_overall_risk
+from common_functions import augur_db_connect, get_dates, get_overall_risk, write_overall_risk_file
 from common_functions import sustain_prs_by_repo, contributor_risk, response_time, activity_release, repo_api_call
 from top_repos_common import get_commits_by_repo
 
@@ -22,7 +22,7 @@ except:
 start_date, end_date = get_dates(year)
 six_start_date, six_end_date = get_dates(six_months)
 
-commit_threshold = 90 # should be 1500 for testing
+commit_threshold = 1500 # 90 but use 1500 for testing
 
 repo_list_commits = get_commits_by_repo(six_start_date, six_end_date, engine)
 
@@ -55,7 +55,8 @@ for index, repo in top.iterrows():
                 release_risk_num, release_risk = activity_release(repo_name, org_name, start_date, end_date, repo_api)
 
             overall_risk = get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk)
-        
+            write_overall_risk_file(repo_name, org_name, overall_risk, sustain_risk, contrib_risk, response_risk, release_risk)
+ 
             # write data to csv file
             risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + ',' + release_risk  + ',' + str(release_risk_num) + '\n'
             csv_output.write(risk_info)
