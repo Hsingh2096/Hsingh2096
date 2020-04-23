@@ -382,12 +382,9 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
 
     return authorDF
 
-def output_filename(repo_name, org_name, metric_string): 
-
+def output_path(repo_name, org_name):
     import datetime
-    import pandas as pd
     from pathlib import Path
-    from common_functions import augur_db_connect
 
     today = datetime.date.today()
     current_year_month = str(today.year) + '-' + '{:02d}'.format(today.month)
@@ -395,7 +392,13 @@ def output_filename(repo_name, org_name, metric_string):
     path = 'output/' + current_year_month + '/' + org_name + '/' + repo_name 
     Path(path).mkdir(parents=True, exist_ok=True)
 
-    filename = path + '/' + repo_name + '_' + metric_string + '_' + current_year_month + '.png'
+    return path
+
+def output_filename(repo_name, org_name, metric_string): 
+
+    path = output_path(repo_name, org_name)
+
+    filename = path + '/' + repo_name + '_' + metric_string + '.png'
 
     return filename
 
