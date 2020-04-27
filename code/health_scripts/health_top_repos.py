@@ -14,7 +14,7 @@ engine = augur_db_connect()
 
 try:
     csv_output = open('output/a_risk_assessment.csv', 'w')
-    csv_output.write('repo_path,repo_name,commits,is_fork,overall_risk,sustain_risk,sustain_risk_num,contrib_risk,contrib_risk_num,response_risk,response_risk_num,release_risk,release_risk_num\n')
+    csv_output.write('repo_path,repo_name,commits,overall_risk,sustain_risk,sustain_risk_num,contrib_risk,contrib_risk_num,response_risk,response_risk_num,release_risk,release_risk_num\n')
 except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
@@ -22,7 +22,7 @@ except:
 start_date, end_date = get_dates(year)
 six_start_date, six_end_date = get_dates(six_months)
 
-commit_threshold = 1500 # 90 but use 1500 for testing
+commit_threshold = 90 # 90 but use 1500 for testing
 
 repo_list_commits = get_commits_by_repo(six_start_date, six_end_date, engine)
 
@@ -35,17 +35,23 @@ for index, repo in top.iterrows():
     repo_path = repo['repo_path']
     org_name = repo_path[11:(len(repo_path)-1)]
 
-    print("Processing:", org_name, repo_name, repo_path, repo_id, repo['count'])
-
-    repo_api = repo_api_call(repo_name, org_name) 
-    is_fork = repo_api.fork
-
-    repo_info = repo_path + ',' + repo_name + ',' + str(repo['count']) + ',' + str(is_fork) + ','
-    csv_output.write(repo_info)
+    print('Processing:', org_name, repo_name, repo_path, repo_id, repo['count'])
 
     try:
-        # Only gather data from repos that aren't forks
-        if is_fork == False:
+        repo_api = repo_api_call(repo_name, org_name) 
+        is_fork = repo_api.fork
+        is_archived = repo_api.archived
+    except:
+        is_fork = None
+        is_archived = None
+        print('Cannot process:', org_name, repo_name, repo_path, repo_id)
+
+    try:
+        # Only gather data from repos that aren't forks or archived
+        if is_fork == False and is_archived == False:
+            repo_info = repo_path + ',' + repo_name + ',' + str(repo['count']) + ','
+            csv_output.write(repo_info)
+
             # gather data but suppress printing from these calls
             suppress = io.StringIO()
             with redirect_stdout(suppress):
@@ -60,11 +66,9 @@ for index, repo in top.iterrows():
             # write data to csv file
             risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + ',' + release_risk  + ',' + str(release_risk_num) + '\n'
             csv_output.write(risk_info)
-        else:
-            csv_output.write(',,,,,,,\n')
 
     except:
-        csv_output.write(',,,,,,,\n')
+        pass
 
 
 
