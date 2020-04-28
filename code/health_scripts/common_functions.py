@@ -378,11 +378,12 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
                             order by cntrb_canonical
                         ) canonical_full_names on canonical_full_names.cntrb_canonical = contributors.cntrb_canonical
                     WHERE 
-                         repo_id = {repo_id}
+                        repo_id = {repo_id}
                         AND cmt_author_name NOT LIKE 'snyk%%'
                         AND cmt_author_name NOT LIKE '%%bot'
                         AND cmt_author_name != 'Spring Operator'
                         AND cmt_author_name != 'Spring Buildmaster'
+                        AND cmt_author_name != 'pivotal-rabbitmq-ci'
                     ORDER BY
                         cntrb_canonical;
                     """
