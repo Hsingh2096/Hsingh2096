@@ -666,8 +666,9 @@ def response_time_data(repo_id, repo_name, start_date, end_date, engine):
 
     return pr_all
 
-def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
-
+def response_time_median(repo_id, repo_name, org_name, start_date, end_date, engine):
+    # NOTE: This function is deprecated and replaced by response_time, but I'm keeping it here in 
+    # case I want to compare the two again.
     import pandas as pd
     import seaborn as sns
     import matplotlib
@@ -736,6 +737,94 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
     print(risk, '-', risk_num, 'months have median response times of more than 1 day in the past 6 months\n')
 
     return risk_num, risk
+
+def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
+    # NOTE: This function is deprecated and replaced by response_time, but I'm keeping it here in 
+    # case I want to compare the two again.
+    import pandas as pd
+    import numpy as np
+    import seaborn as sns
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import datetime
+    from pandas.tseries.offsets import BusinessDay
+
+    pr_all = response_time_data(repo_id, repo_name, start_date, end_date, engine)
+
+    # Wrap in try except for projects with no PRs.
+    try:
+        pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
+        pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
+        pr_all['diff_days'] = pr_all['diff'] / datetime.timedelta(days=1)
+    except:
+        return -1, 'NO DATA'
+
+    year_month_list = pr_all.yearmonth.unique()
+    year_month_list.sort()
+
+    bd = pd.tseries.offsets.BusinessDay(n = 2) 
+
+    pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
+    pr_all['2_bus_days'] = pr_all.pr_created_at + bd
+    pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
+
+    pr_all['in_guidelines'] = np.where(pr_all['2_bus_days'] < pr_all['first_response_time'], 0, 1)
+
+    year_month_list = pr_all.yearmonth.unique()
+    year_month_list.sort()
+    first_response = pr_all.groupby(['repo_name', 'yearmonth'], as_index=False).sum()[['repo_name', 'yearmonth', 'in_guidelines']]
+
+    # counts total number of PRs each month
+    total_by_month = pr_all.groupby(['repo_name', 'yearmonth'], as_index=False).count()[['repo_name', 'yearmonth', 'pr_created_at']]
+
+    first_response['total_prs'] = total_by_month['pr_created_at']
+    first_response['out_guidelines'] = first_response['total_prs'] - first_response['in_guidelines']
+    first_response['in_percent'] = first_response['in_guidelines'] / first_response['total_prs']
+    first_response['out_percent'] = first_response['out_guidelines'] / first_response['total_prs']
+
+    sns.set_style('ticks')
+    sns.set(style="whitegrid", font_scale=2)
+
+    fig, ax = plt.subplots()
+
+    # the size of A4 paper
+    fig.set_size_inches(24, 8)
+
+    risk_num = 0
+    m = 1
+    for percent in first_response['out_percent']:
+        if (percent > 0.10 and m > 6):
+            risk_num+=1
+        m+=1
+
+    title = repo_name + "\nTimely Responses:"
+
+    if risk_num >= 2:
+        risk = 'AT RISK'
+        title += " AT RISK\n" + str(risk_num) + " month(s) with > 10% of pull requests not responded to within 2 business days in the past 6 months."
+        title_color = 'firebrick'
+    else:
+        risk = 'HEALTHY'
+        title += " Healthy\nMore than 90% of pull requests responded to within 2 business days for " + str(6 - risk_num) + " out of the past 6 months."
+        title_color = 'forestgreen'
+
+    plottermonth = sns.lineplot(x='yearmonth', y='total_prs', data=first_response, sort=False, color='black', label='Total', linewidth=2.5)
+    plottermonth = sns.lineplot(x='yearmonth', y='in_guidelines', data=first_response, sort=False, color='green', label='Closed', linewidth=2.5, linestyle='dashed').set_title(title, fontsize=30, color=title_color) 
+
+    plottermonthlabels = ax.set_xticklabels(first_response['yearmonth'])
+    plottermonthlabels = ax.set_ylabel('Number of PRs')
+    plottermonthlabels = ax.set_xlabel('Year Month\n\nInterpretation: Healthy projects will have little or no gap. A large or increasing gap requires attention.')
+
+    filename = output_filename(repo_name, org_name, 'first_response_pr')
+
+    fig.savefig(filename, bbox_inches='tight')
+    plt.close(fig)
+
+    print('\nTime to first response for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
+    print(risk, '-', risk_num, 'months with more than 10% of pull requests not responded to within 2 business days in the past 6 months\n')
+
+    return risk_num, risk
+
 
 def sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engine):
 
