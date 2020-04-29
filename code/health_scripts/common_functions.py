@@ -778,11 +778,11 @@ def sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engi
     fig.set_size_inches(24, 8)
 
     risk_num = 0
-    h = 1
+    m = 1
     for diff_per in pr_sustainDF['diff_per']:
-        if (diff_per > 0.10 and h >=6):
+        if (diff_per > 0.10 and m > 6):
             risk_num+=1
-        h+=1
+        m+=1
 
     title = pr_sustainDF['repo_name'][0] + "\nSustains and Keeps up with Contributions Metric:"
 
