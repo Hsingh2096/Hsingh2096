@@ -739,8 +739,6 @@ def response_time_median(repo_id, repo_name, org_name, start_date, end_date, eng
     return risk_num, risk
 
 def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
-    # NOTE: This function is deprecated and replaced by response_time, but I'm keeping it here in 
-    # case I want to compare the two again.
     import pandas as pd
     import numpy as np
     import seaborn as sns
@@ -748,27 +746,20 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
     import matplotlib.pyplot as plt
     import datetime
     from pandas.tseries.offsets import BusinessDay
+    from matplotlib.ticker import MaxNLocator
 
     pr_all = response_time_data(repo_id, repo_name, start_date, end_date, engine)
+
+    bd = pd.tseries.offsets.BusinessDay(n = 2) 
 
     # Wrap in try except for projects with no PRs.
     try:
         pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
+        pr_all['2_bus_days'] = pr_all.pr_created_at + bd
         pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
-        pr_all['diff_days'] = pr_all['diff'] / datetime.timedelta(days=1)
+        pr_all['in_guidelines'] = np.where(pr_all['2_bus_days'] < pr_all['first_response_time'], 0, 1)
     except:
         return -1, 'NO DATA'
-
-    year_month_list = pr_all.yearmonth.unique()
-    year_month_list.sort()
-
-    bd = pd.tseries.offsets.BusinessDay(n = 2) 
-
-    pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
-    pr_all['2_bus_days'] = pr_all.pr_created_at + bd
-    pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
-
-    pr_all['in_guidelines'] = np.where(pr_all['2_bus_days'] < pr_all['first_response_time'], 0, 1)
 
     year_month_list = pr_all.yearmonth.unique()
     year_month_list.sort()
@@ -786,6 +777,7 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
     sns.set(style="whitegrid", font_scale=2)
 
     fig, ax = plt.subplots()
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
     # the size of A4 paper
     fig.set_size_inches(24, 8)
@@ -809,7 +801,7 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
         title_color = 'forestgreen'
 
     plottermonth = sns.lineplot(x='yearmonth', y='total_prs', data=first_response, sort=False, color='black', label='Total', linewidth=2.5)
-    plottermonth = sns.lineplot(x='yearmonth', y='in_guidelines', data=first_response, sort=False, color='green', label='Closed', linewidth=2.5, linestyle='dashed').set_title(title, fontsize=30, color=title_color) 
+    plottermonth = sns.lineplot(x='yearmonth', y='in_guidelines', data=first_response, sort=False, color='green', label='Response < 2 bus days', linewidth=2.5, linestyle='dashed').set_title(title, fontsize=30, color=title_color) 
 
     plottermonthlabels = ax.set_xticklabels(first_response['yearmonth'])
     plottermonthlabels = ax.set_ylabel('Number of PRs')
@@ -833,6 +825,7 @@ def sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engi
     import matplotlib
     import matplotlib.pyplot as plt
     import datetime
+    from matplotlib.ticker import MaxNLocator
 
     all_prsDF = monthly_prs_all(repo_id, repo_name, start_date, end_date, engine)
 
@@ -862,6 +855,7 @@ def sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engi
     sns.set(style="whitegrid", font_scale=2)
 
     fig, ax = plt.subplots()
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
 
     # the size of A4 paper
     fig.set_size_inches(24, 8)
