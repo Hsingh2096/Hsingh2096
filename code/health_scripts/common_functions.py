@@ -104,13 +104,20 @@ def get_repo_info(engine):
 
     return repo_id, repo_org, repo_name
 
-def get_dates(days):
+def get_last_month():
     import datetime 
 
     current = datetime.date.today()
 
     first_current = current.replace(day=1)
     last_month = first_current - datetime.timedelta(days=1)
+
+    return(last_month)
+
+def get_dates(days):
+    import datetime 
+
+    last_month = get_last_month()
     end_date = "'" + str(last_month) + "'"
 
     start = last_month - datetime.timedelta(days=days)
@@ -430,7 +437,8 @@ def output_path(repo_name, org_name):
     from pathlib import Path
 
     today = datetime.date.today()
-    current_year_month = str(today.year) + '-' + '{:02d}'.format(today.month)
+    last_month = get_last_month()
+    current_year_month = str(today.year) + '-' + '{:02d}'.format(last_month.month)
 
     path = 'output/' + current_year_month + '/' + org_name + '/' + repo_name 
     Path(path).mkdir(parents=True, exist_ok=True)
