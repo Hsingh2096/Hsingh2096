@@ -15,6 +15,29 @@ def augur_db_connect():
 
     return engine
 
+def get_commits_by_repo(start_date, end_date, engine):
+    import pandas as pd
+
+    repo_list_commits = pd.DataFrame()
+    repo_list_commits_query = f"""
+            SELECT COUNT(DISTINCT commits.cmt_commit_hash), repo.repo_id, repo.repo_name, repo.repo_path from repo, commits
+            WHERE 
+                repo.repo_id = commits.repo_id
+                AND commits.cmt_author_timestamp >= {start_date}
+                AND commits.cmt_author_timestamp <= {end_date}
+                AND cmt_author_name NOT LIKE 'snyk%%'
+                AND cmt_author_name NOT LIKE '%%bot'
+                AND cmt_author_name NOT LIKE '%%Bot'
+                AND cmt_author_name != 'Bitnami Containers'
+                AND cmt_author_name != 'Spring Operator'
+                AND cmt_author_name != 'Spring Buildmaster'
+            GROUP BY repo.repo_id
+            ORDER BY COUNT(DISTINCT commits.cmt_commit_hash);
+            """
+    repo_list_commits = pd.read_sql_query(repo_list_commits_query, con=engine)
+
+    return repo_list_commits
+
 def get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk):
     # calculate overall risk score
     risk_count = [sustain_risk, contrib_risk, response_risk, release_risk].count('AT RISK')
@@ -381,6 +404,8 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
                         repo_id = {repo_id}
                         AND cmt_author_name NOT LIKE 'snyk%%'
                         AND cmt_author_name NOT LIKE '%%bot'
+                        AND cmt_author_name NOT LIKE '%%Bot'
+                        AND cmt_author_name != 'Bitnami Containers'
                         AND cmt_author_name != 'Spring Operator'
                         AND cmt_author_name != 'Spring Buildmaster'
                         AND cmt_author_name != 'pivotal-rabbitmq-ci'
