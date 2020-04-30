@@ -785,14 +785,14 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
 
     bd = pd.tseries.offsets.BusinessDay(n = 2) 
 
-    # Wrap in try except for projects with no PRs.
-    try:
-        pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
-        pr_all['2_bus_days'] = pr_all.pr_created_at + bd
-        pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
-        pr_all['in_guidelines'] = np.where(pr_all['2_bus_days'] < pr_all['first_response_time'], 0, 1)
-    except:
+    # Don't gather data if less than 12 PRs
+    if len(pr_all) < 12:
         return -1, 'NO DATA'
+
+    pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
+    pr_all['2_bus_days'] = pr_all.pr_created_at + bd
+    pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
+    pr_all['in_guidelines'] = np.where(pr_all['2_bus_days'] < pr_all['first_response_time'], 0, 1)
 
     year_month_list = pr_all.yearmonth.unique()
     year_month_list.sort()
@@ -863,7 +863,7 @@ def sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engi
     all_prsDF = monthly_prs_all(repo_id, repo_name, start_date, end_date, engine)
 
     # Return with no data if there are no PRs
-    if all_prsDF['total_prs_open_closed'].sum() == 0:
+    if all_prsDF['total_prs_open_closed'].sum() < 12:
         return -1, 'NO DATA'
 
     closed_prsDF = monthly_prs_closed(repo_id, repo_name, start_date, end_date, engine)
