@@ -808,10 +808,15 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
     if len(pr_all) < 12:
         return -1, 'NO DATA'
 
-    pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
-    pr_all['2_bus_days'] = pr_all.pr_created_at + bd
-    pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
-    pr_all['in_guidelines'] = np.where(pr_all['2_bus_days'] < pr_all['first_response_time'], 0, 1)
+    # Exit if diff can't be calculate (usu no responses)
+    try:
+        pr_all['diff'] = pr_all.first_response_time - pr_all.pr_created_at
+        pr_all['2_bus_days'] = pr_all.pr_created_at + bd
+        pr_all['yearmonth'] = pr_all['pr_created_at'].dt.strftime('%Y-%m')
+        pr_all['in_guidelines'] = np.where(pr_all['2_bus_days'] < pr_all['first_response_time'], 0, 1)
+
+    except:
+        return -1, 'NO DATA'
 
     year_month_list = pr_all.yearmonth.unique()
     year_month_list.sort()
