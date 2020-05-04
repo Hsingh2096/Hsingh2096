@@ -797,6 +797,7 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
     import matplotlib
     import matplotlib.pyplot as plt
     import datetime
+    from dateutil.relativedelta import relativedelta
     from pandas.tseries.offsets import BusinessDay
     from matplotlib.ticker import MaxNLocator
 
@@ -840,11 +841,12 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
     fig.set_size_inches(24, 8)
 
     risk_num = 0
-    m = 1
-    for percent in first_response['out_percent']:
-        if (percent > 0.10 and m > 6):
+    six_months = str(datetime.date.today() + relativedelta(months=-7)) # 7 because we don't gather current partial month data
+    for item in first_response.iterrows():
+        year_month = item[1]['yearmonth']
+        percent = item[1]['out_percent']
+        if (percent > 0.10 and year_month >= six_months):
             risk_num+=1
-        m+=1
 
     title = repo_name + "\nTimely Responses:"
 
