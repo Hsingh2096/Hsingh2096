@@ -1,14 +1,17 @@
 import sys
 import pandas as pd
-from common_functions import augur_db_connect, get_repo_info, get_dates, repo_api_call
+from common_functions import augur_db_connect, get_repo_info, get_dates, repo_api_call, build_id_map
 
 engine = augur_db_connect()
+
+# Create a dictionary that maps email addresses to github ids
+id_dict = build_id_map(engine)
 
 # prepare csv file and write header row
 
 try:
     csv_output = open('output/a_repo_activity.csv', 'w')
-    csv_output.write('repo_link,org,repo_name,is_fork,is_archived,redirect,last_updated,last_commiter,most_commits,most_num,second_most,second_num\n')
+    csv_output.write('repo_link,org,repo_name,is_fork,is_archived,redirect,last_updated,last_commiter,last_github,most_commits,most_github,most_num,second_most,second_github,second_num\n')
 except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
@@ -61,14 +64,32 @@ for index, row in by_repo.iterrows():
             is_archive = 'API ERROR'
             redirect = 'API ERROR'
 
-        basic_info = repo_link + ',' + org + ',' + row.repo_name + ',' + str(is_fork) + ',' + str(is_archived) + ',' + str(redirect) + ',' + str(row.cmt_author_timestamp) + ',' + row.cmt_author_email + ','
+        try:
+            last_github = str(id_dict[row.cmt_author_email][0])
+        except:
+            last_github = 'None'
+#        print(row.cmt_author_email, last_github)
+        basic_info = repo_link + ',' + org + ',' + row.repo_name + ',' + str(is_fork) + ',' + str(is_archived) + ',' + str(redirect) + ',' + str(row.cmt_author_timestamp) + ',' + row.cmt_author_email + ',' + last_github + ',' 
         csv_output.write(basic_info)
  
         top_contribs = all_commits.loc[all_commits['repo_id'] == row.repo_id].cmt_author_email.value_counts()
+
+        # Get github ids for emails
+        try:
+            most_github = str(id_dict[top_contribs.index[0]][0])
+        except:
+            most_github = 'None'
+        try:
+            second_github = str(id_dict[top_contribs.index[1]][0])
+        except:
+            second_github = 'None'
+
+#        print(last_github, most_github, second_github)
+
         if len(top_contribs) > 1:
-            committer_info = top_contribs.index[0] + ',' + str(top_contribs[0]) + ',' + top_contribs.index[1] + ',' + str(top_contribs[1]) + '\n'
+            committer_info = top_contribs.index[0] + ',' + most_github + ',' + str(top_contribs[0]) + ',' + top_contribs.index[1] + ',' + second_github + ',' + str(top_contribs[1]) + '\n'
         elif len(top_contribs) == 1:
-            committer_info = top_contribs.index[0] + ',' + str(top_contribs[0]) + ',' + 'None' + ',' + 'None' + '\n'
+            committer_info = top_contribs.index[0] + ',' + most_github + ',' + str(top_contribs[0]) + ',' + 'None' + ',' + 'None' + '\n'
         elif len(top_contribs) == 0:
             committer_info = 'None' + ',' + 'None' + ',' + 'None' + ',' + 'None' + '\n'
         csv_output.write(committer_info)

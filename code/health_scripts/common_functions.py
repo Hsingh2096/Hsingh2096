@@ -15,6 +15,23 @@ def augur_db_connect():
 
     return engine
 
+def build_id_map(engine):
+    # Create a dictionary that maps email addresses to github ids
+    import pandas as pd
+
+    print("Builing map of email addresses to GitHub Ids. Ignore non unique warning.")
+
+    id_dict = {}
+    id_df = pd.DataFrame()
+    id_df_query = f"""
+            SELECT cntrb_email, cntrb_login from contributors
+            """
+    id_df = pd.read_sql_query(id_df_query, con=engine)
+    id_dict = id_df.set_index('cntrb_email').T.to_dict('list')
+    id_dict
+
+    return id_dict
+
 def get_commits_by_repo(start_date, end_date, engine):
     import pandas as pd
 
