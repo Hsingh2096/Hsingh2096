@@ -9,6 +9,9 @@ __pycache__/
 # GitHub key file
 gh_key
 
+#macos files
+.DS_Store
+
 # Images and csv files
 *.png
 output/
