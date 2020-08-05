@@ -18,8 +18,11 @@ def augur_db_connect():
 def build_id_map(engine):
     # Create a dictionary that maps email addresses to github ids
     import pandas as pd
+    import warnings
 
-    print("Builing map of email addresses to GitHub Ids. Ignore non unique warning.")
+    # Ignores warning about not unique. This is caused by null values being not unique :shrug:
+    warnings.simplefilter("ignore")
+    print("Builing map of email addresses to GitHub Ids.")
 
     id_dict = {}
     id_df = pd.DataFrame()
