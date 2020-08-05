@@ -902,6 +902,9 @@ def sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engi
     import matplotlib.pyplot as plt
     import datetime
     from matplotlib.ticker import MaxNLocator
+    import warnings
+    
+    warnings.simplefilter("ignore") # Ignore fixed formatter warning.
 
     all_prsDF = monthly_prs_all(repo_id, repo_name, start_date, end_date, engine)
 
