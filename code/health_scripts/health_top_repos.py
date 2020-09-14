@@ -2,7 +2,7 @@ import sys
 import io
 from contextlib import redirect_stdout
 from common_functions import augur_db_connect, get_dates, get_overall_risk, write_overall_risk_file, get_commits_by_repo
-from common_functions import sustain_prs_by_repo, contributor_risk, response_time, activity_release, repo_api_call
+from common_functions import sustain_prs_by_repo, contributor_risk, response_time, activity_release, repo_api_call, fork_archive
 
 six_months = 180  # Default to one year of data
 year = 365   # Default to one year of data
@@ -37,9 +37,7 @@ for index, repo in top.iterrows():
     print('Processing:', org_name, repo_name, repo_path, repo_id, repo['count'])
 
     try:
-        repo_api = repo_api_call(repo_name, org_name) 
-        is_fork = repo_api.fork
-        is_archived = repo_api.archived
+        is_fork, is_archived = fork_archive(repo_name, org_name, engine)
     except:
         is_fork = None
         is_archived = None

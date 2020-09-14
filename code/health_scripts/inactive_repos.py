@@ -1,6 +1,7 @@
 import sys
 import pandas as pd
 from common_functions import augur_db_connect, get_repo_info, get_dates, repo_api_call, build_id_map
+from common_functions import fork_archive
 
 engine = augur_db_connect()
 
@@ -49,8 +50,9 @@ for index, row in by_repo.iterrows():
     if org not in exclude_list:
         try:
             repo_api = repo_api_call(row.repo_name, org)
-            is_fork = repo_api.fork
-            is_archived = repo_api.archived
+#            is_fork = repo_api.fork
+#            is_archived = repo_api.archived
+            is_fork, is_archived = fork_archive(row.repo_name, org, engine)
 
             full_name = org + '/' + row.repo_name
             api_name = repo_api.full_name
@@ -95,4 +97,7 @@ for index, row in by_repo.iterrows():
         csv_output.write(committer_info)
 #        except:
 #            csv_output.write(repo_link + ',' + org + ',' + row.repo_name + ',API_ERROR,,,,,,\n')
+#        if i>10:
+#             break
+#        i+=1
 

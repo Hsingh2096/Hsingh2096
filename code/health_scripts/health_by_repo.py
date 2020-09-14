@@ -5,6 +5,7 @@
 
 from common_functions import augur_db_connect, get_repo_info, get_dates, get_overall_risk, write_overall_risk_file
 from common_functions import sustain_prs_by_repo, contributor_risk, response_time, activity_release, repo_api_call
+from common_functions import fork_archive
 
 days = 365 # Default to one year of data
 
@@ -13,6 +14,9 @@ engine = augur_db_connect()
 repo_id, org_name, repo_name = get_repo_info(engine)
 
 start_date, end_date = get_dates(days)
+
+is_forked, is_archived = fork_archive(repo_name, org_name, engine)
+print('Forked:', str(is_forked), '\nArchived:', str(is_archived))
 
 repo_api = repo_api_call(repo_name, org_name)
 
