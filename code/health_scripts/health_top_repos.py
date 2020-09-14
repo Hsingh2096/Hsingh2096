@@ -37,11 +37,11 @@ for index, repo in top.iterrows():
     print('Processing:', org_name, repo_name, repo_path, repo_id, repo['count'])
 
     try:
-        is_fork, is_archived = fork_archive(repo_name, org_name, engine)
+        repo_api = repo_api_call(repo_name, org_name)
     except:
-        is_fork = None
-        is_archived = None
-        print('Cannot process:', org_name, repo_name, repo_path, repo_id)
+        print('Cannot process API calls for:', org_name, repo_name, repo_path, repo_id)
+
+    is_fork, is_archived = fork_archive(repo_name, org_name, engine)
 
     try:
         # Only gather data from repos that aren't forks or archived
@@ -59,6 +59,7 @@ for index, repo in top.iterrows():
 
             overall_risk = get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk)
             write_overall_risk_file(repo_name, org_name, overall_risk, sustain_risk, contrib_risk, response_risk, release_risk)
+
  
             # write data to csv file
             risk_info = overall_risk + ',' + sustain_risk + ',' + str(sustain_risk_num) + ',' + contrib_risk + ',' + str(contrib_risk_num) + ',' + response_risk + ',' + str(response_risk_num) + ',' + release_risk  + ',' + str(release_risk_num) + '\n'
