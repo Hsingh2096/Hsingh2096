@@ -165,6 +165,39 @@ def read_key(file_name):
         key = kf.readline().rstrip() # remove newline & trailing whitespace
     return key
 
+def fork_archive(repo_name_orig, org_name, engine):
+    # Get this data from Augur, instead of GH now that these have been
+    # added to the db
+
+    import pandas as pd
+
+    repo_path = "'" + 'github.com/' + org_name + '/' + "'"
+    repo_name = "'" + repo_name_orig + "'"
+
+    repo_df = pd.DataFrame()
+    repo_df_query = f"""
+            SELECT forked_from, repo_archived from repo
+            WHERE repo_name = {repo_name}
+            AND repo_path = {repo_path}
+            """
+    repo_df = pd.read_sql_query(repo_df_query, con=engine)
+    forked = repo_df.forked_from[0]
+    archived = repo_df.repo_archived[0]
+    
+    is_archived = 'ERROR'
+    
+    if forked != 'Parent not available':
+        is_forked = True
+    else:
+        is_forked = False
+    
+    if archived == 1:
+       is_archived = True
+    elif archived == 0:
+       is_archived = False
+
+    return is_forked, is_archived
+
 def repo_api_call(repo_name, org_name):
     from github import Github
     import sys
