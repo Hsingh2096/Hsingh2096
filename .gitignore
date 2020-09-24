@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 # GitHub key file
-gh_key
+gh_key*
 
 #macos files
 .DS_Store
