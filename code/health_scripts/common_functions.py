@@ -209,7 +209,7 @@ def repo_api_call(repo_name, org_name):
         repo = g.get_repo(org_name + '/' + repo_name)
 
     except:
-        print("Error making GH API call. Rate limit remaining", g.rate_limiting[0])
+        print("Error making GH API call for", org_name, repo_name, "Rate limit remaining", g.rate_limiting[0])
         if g.rate_limiting[0] < 5:
             print("Exiting due to rate limit")
             sys.exit()
