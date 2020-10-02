@@ -18,7 +18,7 @@ except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
 
-org_list = ["pivotal-cf-experimental", "pivotal-cloudops", "pcfdev-forks", "cfmobile", "vmware", "vmware-labs", "vmware-samples", "vmware-tanzu", "vmware-tanzu-private", "pivotal-cf"]
+org_list = ["pivotal-cf-experimental", "pivotal-cloudops", "pcfdev-forks", "cfmobile", "vmware", "vmware-labs", "vmware-samples", "vmware-tanzu", "vmware-tanzu-private", "pivotal-cf", "vmwarepivotallabs"]
 
 for org in org_list:
     repo_list = g.get_organization(org).get_repos()
