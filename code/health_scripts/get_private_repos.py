@@ -1,12 +1,21 @@
+# Usage:
+# $python3 gh_key
+# gh_key is the filename containing your GitHub key
+
 from github import Github
 import pandas as pd 
 import sys
 from common_functions import read_key
 
 try:
-    gh_key = read_key('gh_key_stefka')
-    g = Github(gh_key)
+    gh_key_name = str(sys.argv[1])
+except:
+    print("Invalid input. Proper usage of script is\n$python3 gh_key\nwhere gh_key is the filename containing the key.")
+    sys.exit(1)
 
+try:
+    gh_key = read_key(gh_key_name)
+    g = Github(gh_key)
 except:
     print("Error reading GitHub API key. Exiting")
     sys.exit(1)
@@ -19,8 +28,9 @@ except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
 
-org_list = ["pivotal-cf-experimental", "pivotal-cloudoops", "pcfdev-forks"]
-#org_list = ["pivotal-cf-experimental", "pivotal-cloudops", "pcfdev-forks", "cfmobile", "vmware", "vmware-labs", "vmware-samples", "vmware-tanzu", "vmware-tanzu-private", "pivotal-cf", "vmwarepivotallabs"]
+org_list = ["pivotal-cf-experimental", "pivotal-cloudops", "pcfdev-forks", "cfmobile", "vmware", "vmware-labs", "vmware-samples", "vmware-tanzu", "vmware-tanzu-private", "pivotal-cf", "vmwarepivotallabs"]
+
+print("\nIf any of these counts are 0, the GitHub key might not have access to private repos for that org.")
 
 for org in org_list:
 
@@ -39,3 +49,4 @@ for org in org_list:
 
     except:
         print(org, "ERROR: you might have mistyped the name or hit the GH rate limit. Limit remaining:", g.rate_limiting[0])
+
