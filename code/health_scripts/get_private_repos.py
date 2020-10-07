@@ -8,7 +8,8 @@ try:
     g = Github(gh_key)
 
 except:
-    print("Error making GH API call. Rate limit remaining", g.rate_limiting[0])
+    print("Error reading GitHub API key. Exiting")
+    sys.exit(1)
 
 # prepare csv file and write header row
 try:
@@ -18,18 +19,23 @@ except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
 
-org_list = ["pivotal-cf-experimental", "pivotal-cloudops", "pcfdev-forks", "cfmobile", "vmware", "vmware-labs", "vmware-samples", "vmware-tanzu", "vmware-tanzu-private", "pivotal-cf", "vmwarepivotallabs"]
+org_list = ["pivotal-cf-experimental", "pivotal-cloudoops", "pcfdev-forks"]
+#org_list = ["pivotal-cf-experimental", "pivotal-cloudops", "pcfdev-forks", "cfmobile", "vmware", "vmware-labs", "vmware-samples", "vmware-tanzu", "vmware-tanzu-private", "pivotal-cf", "vmwarepivotallabs"]
 
 for org in org_list:
-    repo_list = g.get_organization(org).get_repos()
 
-    count = 0
+    try:
+        repo_list = g.get_organization(org).get_repos()
 
-    for x in repo_list:
-        if x.private == True:
-            csv_line = x.html_url + ',' + str(x.updated_at) +  '\n'
-            csv_output.write(csv_line)
-            count += 1
+        count = 0
 
-    print(org, 'has', count, 'private repos')
+        for x in repo_list:
+            if x.private == True:
+                csv_line = x.html_url + ',' + str(x.updated_at) +  '\n'
+                csv_output.write(csv_line)
+                count += 1
 
+        print(org, 'has', count, 'private repos')
+
+    except:
+        print(org, "ERROR: you might have mistyped the name or hit the GH rate limit. Limit remaining:", g.rate_limiting[0])
