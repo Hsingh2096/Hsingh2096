@@ -2,8 +2,11 @@ def augur_db_connect():
     import psycopg2
     import sqlalchemy as s
     import json
+    from os.path import dirname, join
+    current_dir = dirname(__file__)
+    file_path = join(current_dir, "./config.json")
 
-    with open("config.json") as config_file:
+    with open(file_path) as config_file:
         config = json.load(config_file)
 
     database_connection_string = 'postgres+psycopg2://{}:{}@{}:{}/{}'.format(config['user'], config['password'], config['host'], config['port'], config['database'])
