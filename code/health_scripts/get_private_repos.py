@@ -1,20 +1,15 @@
 # Usage:
-# $python3 gh_key
 # gh_key is the filename containing your GitHub key
+# this file should be in the same directory as the script
 
 from github import Github
 import pandas as pd 
 import sys
+from os.path import dirname, join
 from common_functions import read_key
 
 try:
-    gh_key_name = str(sys.argv[1])
-except:
-    print("Invalid input. Proper usage of script is\n$python3 gh_key\nwhere gh_key is the filename containing the key.")
-    sys.exit(1)
-
-try:
-    gh_key = read_key(gh_key_name)
+    gh_key = read_key('gh_key')
     g = Github(gh_key)
 except:
     print("Error reading GitHub API key. Exiting")
@@ -22,7 +17,10 @@ except:
 
 # prepare csv file and write header row
 try:
-    csv_output = open('output/a_private_repos.csv', 'w')
+    current_dir = dirname(__file__)
+    file_path = join(current_dir, 'output/a_private_repos.csv')
+
+    csv_output = open(file_path, 'w')
     csv_output.write('Repo URL,Last Updated\n')
 except:
     print('Could not write to csv file. Exiting')
