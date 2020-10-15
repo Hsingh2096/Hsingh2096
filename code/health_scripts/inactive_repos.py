@@ -1,5 +1,6 @@
 import sys
 import pandas as pd
+from os.path import dirname, join
 from common_functions import augur_db_connect, get_repo_info, get_dates, repo_api_call, build_id_map
 from common_functions import fork_archive
 
@@ -11,7 +12,10 @@ id_dict = build_id_map(engine)
 # prepare csv file and write header row
 
 try:
-    csv_output = open('output/a_repo_activity.csv', 'w')
+    current_dir = dirname(__file__)
+    file_path = join(current_dir, "./output/a_repo_activity.csv")
+
+    csv_output = open(file_path, 'w')
     csv_output.write('repo_link,org,repo_name,is_fork,is_archived,redirect,last_updated,last_commiter,last_github,most_commits,most_github,most_num,second_most,second_github,second_num\n')
 except:
     print('Could not write to csv file. Exiting')
