@@ -67,7 +67,7 @@ for index, row in by_repo.iterrows():
 
         except:
             is_fork = 'API ERROR'
-            is_archive = 'API ERROR'
+            is_archived = 'API ERROR'
             redirect = 'API ERROR'
 
         try:
@@ -75,6 +75,7 @@ for index, row in by_repo.iterrows():
         except:
             last_github = 'None'
 #        print(row.cmt_author_email, last_github)
+#        print(org, row.repo_name, is_fork, is_archived) 
         basic_info = repo_link + ',' + org + ',' + row.repo_name + ',' + str(is_fork) + ',' + str(is_archived) + ',' + str(redirect) + ',' + str(row.cmt_author_timestamp) + ',' + row.cmt_author_email + ',' + last_github + ',' 
         csv_output.write(basic_info)
  
