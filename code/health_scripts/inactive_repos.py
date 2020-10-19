@@ -105,4 +105,4 @@ for index, row in by_repo.iterrows():
 #        if i>10:
 #             break
 #        i+=1
-
+print("Writing to CSV Complete. Exiting.")

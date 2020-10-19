@@ -48,3 +48,4 @@ for org in org_list:
     except:
         print(org, "ERROR: you might have mistyped the name or hit the GH rate limit. Limit remaining:", g.rate_limiting[0])
 
+print("Writing to CSV Complete. Exiting.")
