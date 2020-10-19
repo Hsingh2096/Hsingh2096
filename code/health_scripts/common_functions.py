@@ -160,11 +160,16 @@ def get_dates(days):
 
 def read_key(file_name):
 
+    from os.path import dirname, join
+
     # Reads the first line of a file containing the GitHub API key
     # Usage: key = read_key('gh_key')
-    # Can also be the full path to the file with key
 
-    with open(file_name, 'r') as kf:
+    current_dir = dirname(__file__)
+    file2 = "./" + file_name
+    file_path = join(current_dir, file2)
+
+    with open(file_path, 'r') as kf:
         key = kf.readline().rstrip() # remove newline & trailing whitespace
     return key
 
