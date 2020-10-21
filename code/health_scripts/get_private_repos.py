@@ -26,7 +26,7 @@ except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
 
-org_list = ["pivotal-cf-experimental", "pivotal-cloudops", "pcfdev-forks", "cfmobile", "vmware", "vmware-labs", "vmware-samples", "vmware-tanzu", "vmware-tanzu-private", "pivotal-cf", "vmwarepivotallabs"]
+org_list = ["pivotal-cf-experimental", "pivotal-cloudops", "pcfdev-forks", "cfmobile", "vmware", "vmware-labs", "vmware-samples", "vmware-tanzu", "vmware-tanzu-private", "pivotal-cf", "vmwarepivotallabs", "pivotal-gss", "pivotal-data-engineering", "pivotal-DataFabric", "pivotalsoftware", "Pivotal-Field-Engineering", "gemxd", "pivotal"]
 
 print("\nIf any of these counts are 0, the GitHub key might not have access to private repos for that org.")
 
