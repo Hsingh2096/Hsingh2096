@@ -66,7 +66,6 @@ for index, repo in top.iterrows():
             csv_output.write(risk_info)
 
     except:
-        pass
-
+        csv_output.write('DATA ERROR,\n')
 
 
