@@ -112,6 +112,13 @@ def get_repo_info(engine):
         repo_org = str(sys.argv[1])
         repo_name = str(sys.argv[2])
 
+    except:
+        print("Please enter a case-sensitive org and repo when prompted.")
+        print("You must use the case from GitHub; for example, Spring-project must be capitalized.")
+        repo_org = input("Enter a GitHub org name: ")
+        repo_name = input("Enter a repo name: ")
+
+    try:
         get_id_query = f"""
             SELECT
                 repo.repo_id
