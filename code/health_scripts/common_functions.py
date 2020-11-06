@@ -165,6 +165,17 @@ def get_dates(days):
 
     return start_date, end_date
 
+def convert_to_dt(start_date, end_date):
+    from datetime import datetime, timezone
+
+    # inputs will be date strings, output tz aware datetime
+
+    end_dt = datetime.strptime(end_date, "'%Y-%m-%d'").replace(tzinfo=timezone.utc)
+
+    start_dt = datetime.strptime(start_date, "'%Y-%m-%d'").replace(tzinfo=timezone.utc)
+
+    return start_dt, end_dt
+
 def read_key(file_name):
 
     from os.path import dirname, join
@@ -468,6 +479,8 @@ def monthly_prs_all(repo_id, repo_name, start_date, end_date, engine):
 def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
 
     import pandas as pd
+
+    start_date, end_date = convert_to_dt(start_date, end_date)
 
     #Commit data - from humans excluding known bots
     commitsDF = pd.DataFrame()
