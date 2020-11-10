@@ -1,7 +1,7 @@
 {
     "connection_string": "sqlite:///:memory:",
     "database": "augur_pivotal",
-    "host": "pivotal.osshealth.io",
+    "host": "vista.osshealth.io",
     "password": "UKPivotal",
     "port": 5433,
     "schema": "augur_data",
