@@ -37,7 +37,8 @@ all_commits_query = f"""
 all_commits = pd.read_sql_query(all_commits_query, con=engine)
 
 # Group commits by repo with latest timestamp
-by_repo = all_commits.loc[all_commits.groupby('repo_id').cmt_author_timestamp.idxmax()].sort_values('cmt_author_timestamp')
+#by_repo = all_commits.loc[all_commits.groupby('repo_id').cmt_author_timestamp.idxmax()].sort_values('cmt_author_timestamp')
+by_repo = all_commits[all_commits.groupby('repo_id').cmt_author_timestamp.transform('max') == all_commits['cmt_author_timestamp']]
 
 # Create list of donated orgs to exclude
 
