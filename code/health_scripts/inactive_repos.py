@@ -16,7 +16,7 @@ try:
     file_path = join(current_dir, "./output/a_repo_activity.csv")
 
     csv_output = open(file_path, 'w')
-    csv_output.write('repo_link,org,repo_name,is_fork,is_archived,redirect,last_updated,last_commiter,last_github,most_commits,most_github,most_num,second_most,second_github,second_num\n')
+    csv_output.write('repo_link,org,repo_name,created_at,is_fork,is_archived,redirect,last_updated,last_commiter,last_github,most_commits,most_github,most_num,second_most,second_github,second_num\n')
 except:
     print('Could not write to csv file. Exiting')
     sys.exit(1)
@@ -61,6 +61,8 @@ for index, row in by_repo.iterrows():
 
             full_name = org + '/' + row.repo_name
             api_name = repo_api.full_name
+            created_at = repo_api.created_at
+
             if full_name.lower() == api_name.lower():
                 redirect = False
             else:
@@ -75,9 +77,8 @@ for index, row in by_repo.iterrows():
             last_github = str(id_dict[row.cmt_author_email][0])
         except:
             last_github = 'None'
-#        print(row.cmt_author_email, last_github)
-#        print(org, row.repo_name, is_fork, is_archived) 
-        basic_info = repo_link + ',' + org + ',' + row.repo_name + ',' + str(is_fork) + ',' + str(is_archived) + ',' + str(redirect) + ',' + str(row.cmt_author_timestamp) + ',' + row.cmt_author_email + ',' + last_github + ',' 
+
+        basic_info = repo_link + ',' + org + ',' + row.repo_name + ',' + str(created_at) + ',' + str(is_fork) + ',' + str(is_archived) + ',' + str(redirect) + ',' + str(row.cmt_author_timestamp) + ',' + row.cmt_author_email + ',' + last_github + ',' 
         csv_output.write(basic_info)
  
         top_contribs = all_commits.loc[all_commits['repo_id'] == row.repo_id].cmt_author_email.value_counts()
@@ -91,8 +92,6 @@ for index, row in by_repo.iterrows():
             second_github = str(id_dict[top_contribs.index[1]][0])
         except:
             second_github = 'None'
-
-#        print(last_github, most_github, second_github)
 
         if len(top_contribs) > 1:
             committer_info = top_contribs.index[0] + ',' + most_github + ',' + str(top_contribs[0]) + ',' + top_contribs.index[1] + ',' + second_github + ',' + str(top_contribs[1]) + '\n'
