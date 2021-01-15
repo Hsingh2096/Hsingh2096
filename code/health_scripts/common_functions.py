@@ -541,7 +541,8 @@ def output_path(repo_name, org_name):
 
     today = datetime.date.today()
     last_month = get_last_month()
-    current_year_month = str(today.year) + '-' + '{:02d}'.format(last_month.month)
+    current_year_month = str(last_month.year) + '-' + '{:02d}'.format(last_month.month)
+    #current_year_month = str(today.year) + '-' + '{:02d}'.format(last_month.month)
 
     current_dir = dirname(__file__)
     rel_path = './output/' + current_year_month + '/' + org_name + '/' + repo_name 
