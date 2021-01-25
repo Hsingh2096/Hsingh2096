@@ -653,7 +653,7 @@ def contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine)
 
     risk_bar_labels = ax.set_xticklabels(names, wrap=True)
     risk_bar_labels = ax.set_ylabel('Commits')
-    risk_bar_labels = ax.set_xlabel('\nKey Contributors\n\nA healthy project should have at a minimum 3 people who combined account for the majority (>70%) of the commits.\nThe higher this number is, the more likely your project would succeed if a leading contributor suddenly left the project.\nRed bars indicate when less than 3 people have 70% of commits. Light blue for other contributors.')
+    risk_bar_labels = ax.set_xlabel('\nKey Contributors\n\nInterpretation: Healthy projects should have at minimum 3 people who combined account for the majority (>70%) of the commits.\nThe higher this number is, the more likely your project would succeed if a leading contributor suddenly left the project.\nRed bars indicate when less than 3 people have 70% of commits. Light blue for other contributors.')
 
     i = 0
     for p in ax.patches:
