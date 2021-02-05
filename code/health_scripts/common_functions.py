@@ -528,7 +528,7 @@ def commit_author_data(repo_id, repo_name, start_date, end_date, engine):
     total_commits = commitsDF.cmt_commit_hash.nunique()    
 
     authorDF = pd.DataFrame()
-    authorDF = commitsDF.cmt_author_name.value_counts()
+    authorDF = commitsDF.canonical_full_name.value_counts()
     authorDF = authorDF.reset_index()
     authorDF.columns = ['name', 'commits']
     authorDF['percent'] = authorDF['commits'] / total_commits
@@ -570,7 +570,6 @@ def contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine)
 
     authorDF = commit_author_data(repo_id, repo_name, start_date, end_date, engine)
 
-    print("in contrib_risk func\n", authorDF.head(10))
     cum_percent = 0
     people_list = []
 
