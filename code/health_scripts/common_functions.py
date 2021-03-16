@@ -1060,7 +1060,10 @@ def sustain_prs_by_repo_graph(repo_id, repo_name, org_name, start_date, end_date
 
     return risk_num, risk
 
-def sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engine):
+def sustain_prs_by_repo_OBSOLETE(repo_id, repo_name, org_name, start_date, end_date, engine):
+
+    # This function is obsolete and has been replaced by sustain_prs_by_repo_data and sustain_prs_by_repo_graph
+    # Keeping this code around until I fully validated my changes
 
     import pandas as pd
     import seaborn as sns

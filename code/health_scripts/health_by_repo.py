@@ -4,7 +4,7 @@
 ###    $ python3 health_by_repo.py vmware-tanzu velero
 
 from common_functions import augur_db_connect, get_repo_info, get_dates, get_overall_risk, write_overall_risk_file
-from common_functions import sustain_prs_by_repo, contributor_risk, response_time, activity_release, repo_api_call
+from common_functions import contributor_risk, response_time, activity_release, repo_api_call
 from common_functions import fork_archive, sustain_prs_by_repo_graph
 
 days = 365 # Default to one year of data
