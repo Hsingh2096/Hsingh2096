@@ -299,7 +299,7 @@ def activity_release(repo_name, org_name, start_date, end_date, repo_api):
     # the size of A4 paper
     fig.set_size_inches(24, 8)
 
-    title = repo_name + "\nActively Maintained - Regular Releases Metric:"
+    title = repo_name + "\nActively Maintained - Regular Releases:"
 
     if risk_num < 5:
         risk = 'AT RISK'
@@ -633,7 +633,7 @@ def contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine)
     # the size of A4 paper
     fig.set_size_inches(24, 8)
 
-    title = repo_name + "\nContributor Risk Metric Assessment: "
+    title = repo_name + "\nContributor Risk: "
 
     if num_people < 3:
         risk = 'AT RISK'
@@ -1037,7 +1037,7 @@ def sustain_prs_by_repo_data(repo_id, repo_name, org_name, start_date, end_date,
             risk_num+=1
         m+=1
 
-    title = pr_sustainDF['repo_name'][0] + "\nSustains and Keeps up with Contributions Metric:"
+    title = pr_sustainDF['repo_name'][0] + "\nSustains and Keeps up with Contributions:"
 
     if risk_num >= 2:
         risk = 'AT RISK'
@@ -1152,7 +1152,7 @@ def sustain_prs_by_repo_OBSOLETE(repo_id, repo_name, org_name, start_date, end_d
             risk_num+=1
         m+=1
 
-    title = pr_sustainDF['repo_name'][0] + "\nSustains and Keeps up with Contributions Metric:"
+    title = pr_sustainDF['repo_name'][0] + "\nSustains and Keeps up with Contributions:"
 
     if risk_num >= 2:
         risk = 'AT RISK'
