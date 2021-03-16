@@ -1,3 +1,6 @@
+#OBSOLETE - This script has been moved to the Jupyter Notebook: OSPO_Project_Health_Data_Tableau.ipynb
+
+
 from common_functions import augur_db_connect, get_dates, get_commits_by_repo
 from common_functions import repo_api_call, fork_archive
 from tableau_functions import sustain_prs_by_repo_tableau, contributor_risk_tableau, response_time_tableau, activity_release_tableau

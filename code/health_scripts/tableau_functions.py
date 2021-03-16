@@ -1,3 +1,7 @@
+#OBSOLETE - This script has been moved to the Jupyter Notebook: OSPO_Project_Health_Data_Tableau.ipynb
+
+
+
 def sustain_prs_by_repo_tableau(repo_id, repo_name, org_name, start_date, end_date, engine):
 
     import pandas as pd
