@@ -5,7 +5,7 @@
 
 from common_functions import augur_db_connect, get_repo_info, get_dates, get_overall_risk, write_overall_risk_file
 from common_functions import sustain_prs_by_repo, contributor_risk, response_time, activity_release, repo_api_call
-from common_functions import fork_archive
+from common_functions import fork_archive, sustain_prs_by_repo_graph
 
 days = 365 # Default to one year of data
 
@@ -22,7 +22,7 @@ repo_api = repo_api_call(repo_name, org_name)
 
 release_risk_num, release_risk = activity_release(repo_name, org_name, start_date, end_date, repo_api)
 
-sustain_risk_num, sustain_risk = sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engine)
+sustain_risk_num, sustain_risk = sustain_prs_by_repo_graph(repo_id, repo_name, org_name, start_date, end_date, engine)
 
 contrib_risk_num, contrib_risk = contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine)
 

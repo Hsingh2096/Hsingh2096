@@ -2,7 +2,7 @@ import sys
 import io
 from contextlib import redirect_stdout
 from common_functions import augur_db_connect, get_dates, get_overall_risk, write_overall_risk_file, get_commits_by_repo
-from common_functions import sustain_prs_by_repo, contributor_risk, response_time, activity_release, repo_api_call, fork_archive
+from common_functions import sustain_prs_by_repo_graph, contributor_risk, response_time, activity_release, repo_api_call, fork_archive
 
 six_months = 180  # Default to one year of data
 year = 365   # Default to one year of data
@@ -26,6 +26,8 @@ commit_threshold = 60 # 90 but use 1500 for testing
 repo_list_commits = get_commits_by_repo(six_start_date, six_end_date, engine)
 
 top = repo_list_commits.loc[repo_list_commits['count'] > commit_threshold]
+
+i = 0  ##### testing
 
 for index, repo in top.iterrows():
 
@@ -52,7 +54,7 @@ for index, repo in top.iterrows():
             # gather data but suppress printing from these calls
             suppress = io.StringIO()
             with redirect_stdout(suppress):
-                sustain_risk_num, sustain_risk = sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engine)
+                sustain_risk_num, sustain_risk = sustain_prs_by_repo_graph(repo_id, repo_name, org_name, start_date, end_date, engine)
                 contrib_risk_num, contrib_risk = contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine)
                 response_risk_num, response_risk = response_time(repo_id, repo_name, org_name, start_date, end_date, engine)
                 release_risk_num, release_risk = activity_release(repo_name, org_name, start_date, end_date, repo_api)
@@ -68,4 +70,8 @@ for index, repo in top.iterrows():
     except:
         csv_output.write('DATA ERROR,\n')
 
-
+    # Testing - Delete these lines later
+    if i > 2:
+        break
+    else:
+       i+=1    
