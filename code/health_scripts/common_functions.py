@@ -964,6 +964,101 @@ def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
 
     return risk_num, risk
 
+def sustain_prs_by_repo_data(repo_id, repo_name, org_name, start_date, end_date, engine):
+
+    import pandas as pd
+
+    all_prsDF = monthly_prs_all(repo_id, repo_name, start_date, end_date, engine)
+
+    # Return with no data if there are no PRs
+    if all_prsDF['total_prs_open_closed'].sum() < 24:
+        return -1, 'TOO FEW PRs', all_prsDF, '', '', '', -1, -1
+    else:
+        error_num = 0
+        error_text = 'NA'
+
+    closed_prsDF = monthly_prs_closed(repo_id, repo_name, start_date, end_date, engine)
+
+    pr_sustainDF = pd.DataFrame()
+
+    pr_sustainDF['yearmonth'] = closed_prsDF['yearmonth']
+    pr_sustainDF['repo_name'] = closed_prsDF['repo_name']
+    pr_sustainDF['repo_id'] = closed_prsDF['repo_id']
+    pr_sustainDF['closed_total'] = closed_prsDF['total_prs_open_closed']
+
+    pr_sustainDF['all_total'] = all_prsDF['total_prs_open_closed']
+    pr_sustainDF['diff'] = pr_sustainDF['all_total'] - pr_sustainDF['closed_total']
+    pr_sustainDF['diff_per'] = pr_sustainDF['diff'] / pr_sustainDF['all_total']
+
+    pr_sustainDF['repo_id'] = pr_sustainDF['repo_id'].map(int)
+    pr_sustainDF.set_index('repo_id', 'yearmonth')
+
+    risk_num = 0
+    m = 1
+    for diff_per in pr_sustainDF['diff_per']:
+        if (diff_per > 0.10 and m > 6):
+            risk_num+=1
+        m+=1
+
+    title = pr_sustainDF['repo_name'][0] + "\nSustains and Keeps up with Contributions Metric:"
+
+    if risk_num >= 2:
+        risk = 'AT RISK'
+        title += " AT RISK\n" + str(risk_num) + " month(s) with > 10% of total pull requests not closed in the past 6 months"
+        title_color = 'firebrick'
+    else:
+        risk = 'HEALTHY'
+        title += " Healthy\nMore than 90% of total pull requests were closed for " + str(6 - risk_num) + " out of the past 6 months."
+        title_color = 'forestgreen'
+
+    interpretation = 'Interpretation: Healthy projects will have little or no gap. A large or increasing gap requires attention.'
+
+    return error_num, error_text, pr_sustainDF, title, title_color, interpretation, risk, risk_num  
+
+def sustain_prs_by_repo_graph(repo_id, repo_name, org_name, start_date, end_date, engine):
+
+    import pandas as pd
+    import seaborn as sns
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import datetime
+    from matplotlib.ticker import MaxNLocator
+    import warnings
+
+    warnings.simplefilter("ignore") # Ignore fixed formatter warning.
+
+    error_num, error_text, pr_sustainDF, title, title_color, interpretation, risk, risk_num = sustain_prs_by_repo_data(repo_id, repo_name, org_name, start_date, end_date, engine)
+
+    if error_num == -1:
+        return -1, 'TOO FEW PRs'
+
+    matplotlib.use('Agg') #prevents from tying to send plot to screen
+    sns.set_style('ticks')
+    sns.set(style="whitegrid", font_scale=2)
+
+    fig, ax = plt.subplots()
+    ax.yaxis.set_major_locator(MaxNLocator(integer=True))
+
+    # the size of A4 paper
+    fig.set_size_inches(24, 8)
+
+    plottermonth = sns.lineplot(x='yearmonth', y='all_total', data=pr_sustainDF, sort=False, color='black', label='Total', linewidth=2.5)
+    plottermonth = sns.lineplot(x='yearmonth', y='closed_total', data=pr_sustainDF, sort=False, color='green', label='Closed', linewidth=2.5, linestyle='dashed').set_title(title, fontsize=30, color=title_color)
+
+    plottermonthlabels = ax.set_xticklabels(pr_sustainDF['yearmonth'])
+    plottermonthlabels = ax.set_ylabel('Number of PRs')
+    xlabel_str = 'Year Month\n\n' + interpretation
+    plottermonthlabels = ax.set_xlabel(xlabel_str)
+
+    filename = output_filename(repo_name, org_name, 'sustains_pr')
+
+    fig.savefig(filename, bbox_inches='tight')
+    plt.close(fig)
+
+    print('\nSustaining and keeping up with contributions for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
+    print(risk, '- Number of months in the past 6 months with > 10% of PRs not closed', risk_num, '\n')
+
+    return risk_num, risk
 
 def sustain_prs_by_repo(repo_id, repo_name, org_name, start_date, end_date, engine):
 
