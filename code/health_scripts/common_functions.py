@@ -560,8 +560,137 @@ def output_filename(repo_name, org_name, metric_string):
 
     return filename
 
-def contributor_risk(repo_id, repo_name, org_name, start_date, end_date, engine):
+def contributor_risk_data(repo_id, repo_name, org_name, start_date, end_date, engine):
 
+    import pandas as pd
+    import textwrap
+
+    authorDF = commit_author_data(repo_id, repo_name, start_date, end_date, engine)
+
+    cum_percent = 0
+    people_list = []
+
+    i = 1
+    num_people = 0
+
+    for item in authorDF.iterrows():
+        name = item[1]['name']
+        percent = item[1]['percent']
+        commits = item[1]['commits']
+
+        cum_percent += percent
+
+        people_list.append([name, percent, commits])
+
+        if (cum_percent > .70 and num_people == 0):
+            num_people = i
+            risk_percent = cum_percent
+
+        if i == 8:
+            if cum_percent <= .70:
+                risk_percent = cum_percent
+                num_people = i
+            break
+        i+=1
+
+    risk_list = []
+    bar_colors = []
+
+    j = 1
+    for person in people_list:
+        name = person[0]
+        if len(name) > 15:
+            new_name = textwrap.wrap(name, 15)
+            name = '\n'.join(new_name)
+        percent = person[1]
+        commits = person[2]
+        risk_list.append([name, percent, commits])
+
+        if (num_people < 3 and j <= num_people):
+            bar_colors.append('red')
+        else:
+            bar_colors.append('lightblue')
+
+        j+=1
+
+    # Exit early if num_people is 0
+    if num_people == 0:
+        return -1, 'NO DATA', authorDF, '', '', '', -1, -1
+    else:
+        error_num = 0
+        error_text = 'NA'
+
+    names = [item[0] for item in risk_list]
+    percents = [item[1] for item in risk_list]
+    commits = [item[2] for item in risk_list]
+
+    title = repo_name + "\nContributor Risk: "
+
+    if num_people < 3:
+        risk = 'AT RISK'
+        title += "AT RISK"
+        title_color = 'firebrick'
+    else:
+        risk = 'HEALTHY'
+        title += "Healthy"
+        title_color = 'forestgreen'
+
+    # reformat dates
+    start = start_date.replace("'", '')
+    end = end_date.replace("'", '')
+
+    title += "\n" + str(num_people) + " people made up " + "{:.0%}".format(risk_percent) + " of the commits from " + start + " to " + end + ".\n"
+
+    interpretation = 'Interpretation: Healthy projects should have at minimum 3 people who combined account for the majority (>70%) of the commits.\nThe higher this number is, the more likely your project would succeed if a leading contributor suddenly left the project.\nRed bars indicate when less than 3 people have 70% of commits. Light blue for other contributors.'
+
+    return error_num, error_text, names, percents, commits, bar_colors, title, title_color, interpretation, risk, num_people
+
+def contributor_risk_graph(repo_id, repo_name, org_name, start_date, end_date, engine):
+
+    import seaborn as sns
+    import matplotlib
+    import matplotlib.pyplot as plt
+
+    error_num, error_text, names, percents, commits, bar_colors, title, title_color, interpretation, risk, num_people = contributor_risk_data(repo_id, repo_name, org_name, start_date, end_date, engine)
+
+    if error_num == -1:
+        return -1, 'NO DATA'
+
+    matplotlib.use('Agg') #prevents from tying to send plot to screen
+    sns.set_style('ticks')
+    sns.set(style="whitegrid", font_scale=2)
+ 
+    fig, ax = plt.subplots()
+ 
+    # the size of A4 paper
+    fig.set_size_inches(24, 8)
+
+    risk_bar = sns.barplot(x=names, y=commits, palette=bar_colors).set_title(title, fontsize=30, color=title_color)
+
+    risk_bar_labels = ax.set_xticklabels(names, wrap=True)
+    risk_bar_labels = ax.set_ylabel('Commits')
+    xlabel_str = '\nKey Contributors\n\n' + interpretation
+    risk_bar_labels = ax.set_xlabel(xlabel_str)
+
+    i = 0
+    for p in ax.patches:
+        ax.annotate("{:.0%}".format(percents[i]), (p.get_x() + p.get_width() / 2., p.get_height()),
+            ha='center', va='center', color='gray', xytext=(0, 20),
+            textcoords='offset points')
+        i+=1
+
+    filename = output_filename(repo_name, org_name, 'contrib_risk_commits')
+
+    fig.savefig(filename, bbox_inches='tight')
+    plt.close(fig)
+
+    print('\nContributor Risk for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
+    print(risk, '-', num_people, 'people make up > 70% of the commits in the past year\n')
+
+    return num_people, risk
+
+def contributor_risk_OBSOLETE(repo_id, repo_name, org_name, start_date, end_date, engine):
+    # OBSOLETE - this function has been replaced with contributor_risk_data and contributor_risk_graph
     import pandas as pd
     import seaborn as sns
     import matplotlib
@@ -915,7 +1044,8 @@ def response_time_graph(repo_id, repo_name, org_name, start_date, end_date, engi
 
     return risk_num, risk
 
-def response_time(repo_id, repo_name, org_name, start_date, end_date, engine):
+def response_time_OBSOLETE(repo_id, repo_name, org_name, start_date, end_date, engine):
+    # OBSOLETE replaced by response_time_data and response_time_graph
     import pandas as pd
     import numpy as np
     import seaborn as sns
