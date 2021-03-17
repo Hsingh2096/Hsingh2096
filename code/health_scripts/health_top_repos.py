@@ -2,7 +2,7 @@ import sys
 import io
 from contextlib import redirect_stdout
 from common_functions import augur_db_connect, get_dates, get_overall_risk, write_overall_risk_file, get_commits_by_repo
-from common_functions import sustain_prs_by_repo_graph, contributor_risk_graph, response_time_graph, activity_release
+from common_functions import sustain_prs_by_repo_graph, contributor_risk_graph, response_time_graph, activity_release_graph
 from common_functions import repo_api_call, fork_archive
 
 six_months = 180  # Default to one year of data
@@ -58,7 +58,7 @@ for index, repo in top.iterrows():
                 sustain_risk_num, sustain_risk = sustain_prs_by_repo_graph(repo_id, repo_name, org_name, start_date, end_date, engine)
                 contrib_risk_num, contrib_risk = contributor_risk_graph(repo_id, repo_name, org_name, start_date, end_date, engine)
                 response_risk_num, response_risk = response_time_graph(repo_id, repo_name, org_name, start_date, end_date, engine)
-                release_risk_num, release_risk = activity_release(repo_name, org_name, start_date, end_date, repo_api)
+                release_risk_num, release_risk = activity_release_graph(repo_name, org_name, start_date, end_date, repo_api)
 
             overall_risk = get_overall_risk(sustain_risk, contrib_risk, response_risk, release_risk)
             write_overall_risk_file(repo_name, org_name, overall_risk, sustain_risk, contrib_risk, response_risk, release_risk)

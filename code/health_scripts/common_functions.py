@@ -267,6 +267,83 @@ def convert_dates(start_date, end_date):
 
     return start_dt, end_dt 
 
+def activity_release_data(repo_name, org_name, start_date, end_date, repo_api):
+
+    import datetime
+
+    try:
+        releases_df = get_release_data(repo_name, org_name, start_date, end_date, repo_api)
+        error_num = 0
+        error_text = None
+    except:
+        return -1, 'NO DATA', None, None, None, None, None, None, None, None
+
+    start_dt, end_dt = convert_dates(start_date, end_date)
+    six_mos_dt = end_dt - datetime.timedelta(days=180)
+
+    risk_num = 0
+    for release in releases_df['date']:
+        if (release >= six_mos_dt and release <= end_dt):
+            risk_num+=1
+
+    # return before creating plots if no release data in past 6 months
+    if risk_num == 0:
+        return -1, 'NO DATA', None, None, None, None, None, None, None, None
+
+    title = repo_name + "\nActively Maintained - Regular Releases:"
+
+    if risk_num < 5:
+        risk = 'AT RISK'
+        title += " AT RISK\n" + str(risk_num) + " releases in the past 6 months."
+        title_color = 'firebrick'
+    else:
+        risk = 'HEALTHY'
+        title += " Healthy\n" + str(risk_num) + " releases in the past 6 months."
+        title_color = 'forestgreen'
+
+    interpretation = 'Interpretation: Healthy projects will have at least 5 releases in the past 6 months.'
+
+    return error_num, error_text, releases_df, start_dt, end_dt, title, title_color, interpretation, risk, risk_num
+
+def activity_release_graph(repo_name, org_name, start_date, end_date, repo_api):
+
+    import seaborn as sns
+    import matplotlib
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as ticker
+
+    error_num, error_text, releases_df, start_dt, end_dt, title, title_color, interpretation, risk, risk_num = activity_release_data(repo_name, org_name, start_date, end_date, repo_api)
+
+    if error_num == -1:
+        return -1, 'TOO FEW PRs'
+
+    matplotlib.use('Agg') #prevents from tying to send plot to screen
+    sns.set(style="whitegrid", font_scale=2)
+
+    fig, ax = plt.subplots()
+
+    # the size of A4 paper
+    fig.set_size_inches(24, 8)
+
+    ax.set_xlim(start_dt, end_dt)
+    ax.set_ylim(0,2)
+    ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
+    ax.set(yticklabels=[])
+
+    plottermonth = sns.lineplot(y=1, x='date', data=releases_df, marker="X", linewidth=0, markersize=20).set_title(title, fontsize=30, color=title_color)
+    xlabel_str = 'Year Month\n\n' + interpretation
+    plottermonthlabels = ax.set_xlabel(xlabel_str)
+
+    filename = output_filename(repo_name, org_name, 'activity_release')
+
+    fig.savefig(filename, bbox_inches='tight')
+    plt.close(fig)
+
+    print('\nActivity Release metric for', repo_name, '\nfrom', start_date, 'to', end_date, '\nsaved as', filename)
+    print(risk, '-', risk_num, 'releases in the past 6 months\n')
+
+    return risk_num, risk
+
 def activity_release(repo_name, org_name, start_date, end_date, repo_api):
     import seaborn as sns
     import matplotlib
@@ -615,7 +692,7 @@ def contributor_risk_data(repo_id, repo_name, org_name, start_date, end_date, en
 
     # Exit early if num_people is 0
     if num_people == 0:
-        return -1, 'NO DATA', authorDF, '', '', '', -1, -1
+        return -1, 'NO DATA', None, None, None, None, None, None, None, None, None
     else:
         error_num = 0
         error_text = 'NA'
@@ -948,10 +1025,10 @@ def response_time_data(repo_id, repo_name, org_name, start_date, end_date, engin
 
     # Don't gather data if less than 24 PRs
     if len(pr_all) < 24:
-        return -1, 'TOO FEW PRs', pr_all, '', '', '', -1, -1
+        return -1, 'TOO FEW PRs', None, None, None, None, None, None
     else:
         error_num = 0
-        error_text = 'NA'
+        error_text = None
 
     # Exit if diff can't be calculate (usu no responses)
     try:
@@ -1139,10 +1216,10 @@ def sustain_prs_by_repo_data(repo_id, repo_name, org_name, start_date, end_date,
 
     # Return with no data if there are no PRs
     if all_prsDF['total_prs_open_closed'].sum() < 24:
-        return -1, 'TOO FEW PRs', all_prsDF, '', '', '', -1, -1
+        return -1, 'TOO FEW PRs', None, None, None, None, None, None
     else:
         error_num = 0
-        error_text = 'NA'
+        error_text = None
 
     closed_prsDF = monthly_prs_closed(repo_id, repo_name, start_date, end_date, engine)
 
